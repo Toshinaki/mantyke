@@ -4,7 +4,14 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/mantyke"
+      "path": "./libs/spotlight-image"
     }
-  ]
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node10",
+      "customConditions": null
+    }
+  }
 }

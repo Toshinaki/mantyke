@@ -1,0 +1,89 @@
+.originalImage {
+  cursor: pointer;
+  max-width: 100%;
+  height: auto;
+}
+
+.modalRoot {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.modalContent {
+  background-color: transparent;
+}
+
+.modalBody {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+}
+
+.spotlight {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  &.grab {
+    cursor: grab;
+  }
+
+  &.grabbing {
+    cursor: grabbing;
+  }
+}
+
+.controls {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--mantine-spacing-xs);
+}
+
+.topControls {
+  top: 20px;
+  right: 20px;
+}
+
+.bottomControls {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.controlButton {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+.imageWrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* cursor: default; */
+}
+
+.modalImage {
+  transition: transform 0.2s ease, opacity 0.3s ease;
+  max-width: none;
+  max-height: none;
+  width: auto;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.imageLoaded {
+  opacity: 1;
+}
+
+.noTransition {
+  transition: none;
+}
