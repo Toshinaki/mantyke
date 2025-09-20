@@ -13,12 +13,12 @@ import {
   type ActionIconProps,
 } from '@mantine/core';
 import {
-  TbMinimize,
-  TbMaximize,
-  TbZoomOut,
-  TbZoomReset,
-  TbZoomIn,
-} from 'react-icons/tb';
+  IconMinimize,
+  IconMaximize,
+  IconZoomOut,
+  IconZoomReset,
+  IconZoomIn,
+} from '@tabler/icons-react';
 import styles from './spotlight-image.module.css';
 
 // Configuration constants for the spotlight component
@@ -200,7 +200,11 @@ export function SpotlightImage(props: SpotlightImageProps) {
           {/* Top right controls: fullscreen toggle and close */}
           <Group className={clsx(styles.controls, styles.topControls)}>
             <ControlButton onClick={handleFullscreenToggle}>
-              {fullscreen ? <TbMinimize size={18} /> : <TbMaximize size={18} />}
+              {fullscreen ? (
+                <IconMinimize size={18} />
+              ) : (
+                <IconMaximize size={18} />
+              )}
             </ControlButton>
 
             <CloseButton
@@ -214,15 +218,15 @@ export function SpotlightImage(props: SpotlightImageProps) {
           {/* Bottom center controls: zoom controls */}
           <Group className={clsx(styles.controls, styles.bottomControls)}>
             <ControlButton onClick={handleZoomOut}>
-              <TbZoomOut size={18} />
+              <IconZoomOut size={18} />
             </ControlButton>
 
             <ControlButton onClick={handleZoomReset}>
-              <TbZoomReset size={18} />
+              <IconZoomReset size={18} />
             </ControlButton>
 
             <ControlButton onClick={handleZoomIn}>
-              <TbZoomIn size={18} />
+              <IconZoomIn size={18} />
             </ControlButton>
           </Group>
 

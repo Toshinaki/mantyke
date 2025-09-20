@@ -2,20 +2,23 @@
   "name": "@mantyke/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "release": "changeset publish"
+  },
   "private": true,
   "dependencies": {
     "@mantine/core": "^8.3.1",
     "@mantine/hooks": "^8.3.1",
+    "@tabler/icons-react": "^3.35.0",
     "clsx": "^2.1.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-icons": "^5.5.0",
     "react-router-dom": "6.29.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.5",
     "@babel/preset-react": "^7.14.5",
+    "@changesets/cli": "^2.29.7",
     "@eslint/js": "^9.8.0",
     "@nx/eslint": "21.5.3",
     "@nx/eslint-plugin": "21.5.3",
