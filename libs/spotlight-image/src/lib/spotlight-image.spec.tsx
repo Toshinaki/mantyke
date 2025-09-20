@@ -1,10 +1,14 @@
 import { render } from '@testing-library/react';
+import { MantineProvider } from '@mantine/core';
+import { SpotlightImage } from './spotlight-image';
 
-import MantykeSpotlightImage from './spotlight-image';
-
-describe('MantykeSpotlightImage', () => {
+describe('SpotlightImage', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<MantykeSpotlightImage />);
+    const { baseElement } = render(
+      <MantineProvider>
+        <SpotlightImage src="test.jpg" alt="test" />
+      </MantineProvider>
+    );
     expect(baseElement).toBeTruthy();
   });
 });
