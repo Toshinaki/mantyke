@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { SpotlightImage } from './spotlight-image';
+import '@mantine/core/styles.css';
 
 describe('SpotlightImage', () => {
   it('should render successfully', () => {
