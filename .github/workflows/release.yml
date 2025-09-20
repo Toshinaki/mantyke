@@ -1,14 +1,16 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
     branches:
       - master
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
-
 jobs:
   release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Release
     runs-on: ubuntu-latest
     steps:
