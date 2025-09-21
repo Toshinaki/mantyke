@@ -1,6 +1,3 @@
 packages:
-  - 'apps/*'
-  - 'spotlight-image'
-  - 'libs/*'
-autoInstallPeers: true
-strictPeerDependencies: false
+  - "apps/*"
+  - "packages/*"
