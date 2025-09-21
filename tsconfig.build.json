@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["packages/**/*", "@types"],
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.story.tsx",
+    "**/*.story.ts",
+    "packages/*/dist"
+  ],
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "declarationDir": "temp/types"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@mantyke/spotlight-image",
+  "version": "0.1.0",
+  "description": "React component for displaying images with zoom, pan, and fullscreen capabilities.",
+  "homepage": "https://github.com/Toshinaki/mantyke/tree/master/packages/spotlight-image#readme",
+  "packageManager": "pnpm@10.12.1",
+  "license": "MIT",
+  "author": "Toshinaki <futurebefree@gmail.com> (https://re-jeunesse.org/)",
+  "keywords": [
+    "extension",
+    "mantine",
+    "spotlight",
+    "image"
+  ],
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.mts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./styles.css": "./dist/styles.css",
+    "./styles.layer.css": "./dist/styles.layer.css"
+  },
+  "repository": "https://github.com/Toshinaki/mantyke.git",
+  "peerDependencies": {
+    "@mantine/core": ">=7.0.0",
+    "@mantine/hooks": ">=7.0.0",
+    "@tabler/icons-react": ">=3.0.0",
+    "clsx": ">=2.0.0",
+    "react": "^18.x || ^19.x",
+    "react-dom": "^18.x || ^19.x"
+  },
+  "bugs": "https://github.com/Toshinaki/mantyke/issues"
+}

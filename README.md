@@ -1,135 +1,39 @@
-# Turborepo starter
+# Mantine Extension Template
 
-This Turborepo starter is maintained by the Turborepo core team.
+This is a template repository for creating Mantine extensions. It includes all necessary configuration files and scripts to get you started.
 
-## Using this example
+## Get started
 
-Run the following command:
+1. Click "Use this template" button at the top of the page to create a new repository based on this template.
+2. Clone the repository to your local machine and install dependencies (`yarn`)
+3. Run `nvm use` to switch to the correct node version
+4. Come up with a name for your extension and replace all occurrences of `mantine-extension-template` with your extension name
+5. Change `repository` field in [packages/extension/package.json](https://github.com/mantinedev/extension-template/blob/master/packages/extension/package.json) to point to your repository
+6. Run `npm run docgen` to generate files required for documentation
+7. To verify that everything works correctly, run `npm run build` and `npm test` to build and test your initial setup
+8. All good! Start developing your extension.
 
-```sh
-npx create-turbo@latest
-```
+## Local development
 
-## What's inside?
+To develop your extension locally, run the following commands:
 
-This Turborepo includes the following packages/apps:
+- Run `npm run storybook` to start the storybook
+- Run `npm run dev` to start the documentation
+- To regenerate props documentation, run `npm run docgen`
 
-### Apps and Packages
+## Publishing package
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+1. Login with your npm account by running `npm login`, if you have 2FA enabled, [generate automation token](https://docs.npmjs.com/creating-and-viewing-access-tokens) and add it to your `~/.npmrc` file
+2. Make sure that your package name is unique and does not exist on npm yet
+3. Run `npm run release:patch`, `npm run release:minor` or `npm run release:major` to publish new version of your package
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Publish documentation
 
-### Utilities
+By default, the documentation is deployed to GitHub Pages. The script to deploy documentation runs automatically when the package is published. In order for
+this script to work correctly, you need to make sure that `repository` field in [packages/extension/package.json](https://github.com/mantinedev/extension-template/blob/master/packages/extension/package.json) points to your repository.
 
-This Turborepo has some additional tools already setup for you:
+To publish documentation manually, run `npm run docs:deploy`.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## README file of your extension
 
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+`README.md` file at the root repository directory (file that you are currently reading) is copied to to `package/README.md` during the build process to avoid duplication. To add content to the README file of your extension, remove extension template documentation from this file and add your own content.

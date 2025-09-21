@@ -1,7 +1,4 @@
 {
-  "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
-  ]
+    "typescript.preferences.preferTypeOnlyAutoImports": true,
+    "editor.formatOnSave": true
 }

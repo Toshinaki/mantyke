@@ -1,28 +1,41 @@
 {
-  "name": "docs",
-  "version": "0.1.0",
-  "type": "module",
+  "name": "extension-template-docs",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3001",
+    "dev": "next dev --port 9281",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
-    "next": "^15.5.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@mantine/code-highlight": "8.3.1",
+    "@mantine/core": "8.3.1",
+    "@mantine/hooks": "8.3.1",
+    "@mantinex/demo": "^2.0.0",
+    "@mantinex/dev-icons": "^2.0.0",
+    "@mantinex/mantine-header": "^2.0.0",
+    "@mantinex/mantine-logo": "^2.0.0",
+    "@mantinex/mantine-meta": "^2.0.0",
+    "@mdx-js/loader": "^3.1.0",
+    "@mdx-js/react": "^3.1.0",
+    "@next/mdx": "^15.3.2",
+    "@tabler/icons-react": "^3.33.0",
+    "@types/mdx": "^2.0.13",
+    "clsx": "^2.1.1",
+    "mantine-extension-template": "workspace:*",
+    "@mantyke/spotlight-image": "workspace:*",
+    "next": "15.3.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remark-slug": "^7.0.1",
+    "shiki": "^3.4.2",
+    "type-fest": "^4.41.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.15.3",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1",
-    "eslint": "^9.34.0",
-    "typescript": "5.9.2"
+    "@types/node": "^22.15.24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "5.8.3"
   }
 }

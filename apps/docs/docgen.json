@@ -1,0 +1,24 @@
+{
+  "TestComponent": {
+    "props": {
+      "color": {
+        "defaultValue": null,
+        "description": "Controls <code>background-color</code> of the root element, key of <code>theme.colors</code> or any valid CSS color, <code>theme.primaryColor</code> by default",
+        "name": "color",
+        "required": false,
+        "type": {
+          "name": "MantineColor"
+        }
+      },
+      "label": {
+        "defaultValue": null,
+        "description": "Label displayed inside the component, <code>'Test component'</code> by default",
+        "name": "label",
+        "required": false,
+        "type": {
+          "name": "React.ReactNode"
+        }
+      }
+    }
+  }
+}
