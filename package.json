@@ -27,7 +27,8 @@
     "docs:deploy": "pnpm docs:build && tsx scripts/nojekyll && gh-pages -d docs/out -t",
     "storybook": "storybook dev -p 8271",
     "syncpack": "syncpack list-mismatches",
-    "syncpack:format": "syncpack format"
+    "syncpack:format": "syncpack format",
+    "release": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",

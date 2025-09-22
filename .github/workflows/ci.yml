@@ -55,7 +55,7 @@ jobs:
         run: pnpm nx run-many -t lint --parallel=3
 
       - name: Type check all projects
-        run: pnpm nx run-many -t type-check --parallel=3
+        run: pnpm nx run-many -t typecheck --parallel=3
 
       - name: Test all projects
         run: pnpm nx run-many -t test --parallel=3 --coverage
