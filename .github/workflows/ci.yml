@@ -51,6 +51,9 @@ jobs:
       - name: Setup Nx cache
         uses: nrwl/nx-set-shas@v4
 
+      - name: Generate documentation
+        run: pnpm run docgen
+
       - name: Lint all projects
         run: pnpm nx run-many -t lint --parallel=3
 
