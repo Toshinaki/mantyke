@@ -99,7 +99,7 @@
     "storybook": "^8.6.14",
     "storybook-dark-mode": "^4.0.2",
     "stylelint": "^16.20.0",
-    "stylelint-config-standard-scss": "^15.0.1",
+    "stylelint-config-standard-scss": "^16.0.0",
     "syncpack": "^13.0.4",
     "tsx": "^4.19.4",
     "typescript": "5.8.3",
