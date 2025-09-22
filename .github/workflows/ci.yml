@@ -23,8 +23,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -51,20 +49,23 @@ jobs:
       - name: Setup Nx cache
         uses: nrwl/nx-set-shas@v4
 
+      - name: Build packages
+        run: pnpm nx run-many -t build --exclude=mantyke-docs
+
       - name: Generate documentation
         run: pnpm run docgen
 
-      - name: Lint all projects
-        run: pnpm nx run-many -t lint --parallel=3
-
       - name: Type check all projects
-        run: pnpm nx run-many -t typecheck --parallel=3
+        run: pnpm nx run-many -t typecheck
+
+      - name: Lint all projects
+        run: pnpm nx run-many -t lint
 
       - name: Test all projects
-        run: pnpm nx run-many -t test --parallel=3 --coverage
+        run: pnpm nx run-many -t test --coverage
 
-      - name: Build all projects
-        run: pnpm nx run-many -t build --parallel=3
+      - name: Build docs
+        run: pnpm nx build mantyke-docs
 
       - name: Build success notification
         if: success()
