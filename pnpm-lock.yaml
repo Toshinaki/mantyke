@@ -293,9 +293,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      mantine-extension-template:
-        specifier: workspace:*
-        version: link:../../packages/extension
       next:
         specifier: 15.3.2
         version: 15.3.2(@babel/core@7.28.4)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.93.0)
@@ -327,21 +324,6 @@ importers:
       typescript:
         specifier: 5.8.3
         version: 5.8.3
-
-  packages/extension:
-    dependencies:
-      '@mantine/core':
-        specifier: '>=7.0.0'
-        version: 8.3.1(@mantine/hooks@8.3.1(react@19.1.0))(@types/react@19.1.13)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/hooks':
-        specifier: '>=7.0.0'
-        version: 8.3.1(react@19.1.0)
-      react:
-        specifier: ^18.x || ^19.x
-        version: 19.1.0
-      react-dom:
-        specifier: ^18.x || ^19.x
-        version: 19.1.0(react@19.1.0)
 
   packages/spotlight-image:
     dependencies:

@@ -1,0 +1,80 @@
+name: Master Branch CI
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Nx cache
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Lint all projects
+        run: pnpm nx run-many -t lint --parallel=3
+
+      - name: Type check all projects
+        run: pnpm nx run-many -t type-check --parallel=3
+
+      - name: Test all projects
+        run: pnpm nx run-many -t test --parallel=3 --coverage
+
+      - name: Build all projects
+        run: pnpm nx run-many -t build --parallel=3
+
+      - name: Build success notification
+        if: success()
+        run: |
+          echo "✅ All checks passed on master branch"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+
+      - name: Build failure notification
+        if: failure()
+        run: |
+          echo "❌ Build failed on master branch"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          exit 1

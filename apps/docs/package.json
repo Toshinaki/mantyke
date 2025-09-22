@@ -23,7 +23,6 @@
     "@tabler/icons-react": "^3.33.0",
     "@types/mdx": "^2.0.13",
     "clsx": "^2.1.1",
-    "mantine-extension-template": "workspace:*",
     "@mantyke/spotlight-image": "workspace:*",
     "next": "15.3.2",
     "react": "19.1.0",

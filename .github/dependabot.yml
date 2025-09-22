@@ -1,0 +1,102 @@
+version: 2
+
+updates:
+  # Enable version updates for npm (works with pnpm)
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 10
+    assignees:
+      - 'Toshinaki' # Replace with your GitHub username
+    commit-message:
+      prefix: 'deps'
+      prefix-development: 'deps-dev'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    # Group dependency updates to reduce PR noise
+    groups:
+      # Group all non-major updates together
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group dev dependencies separately
+      dev-dependencies:
+        patterns:
+          - '*'
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group React ecosystem updates
+      react-ecosystem:
+        patterns:
+          - 'react*'
+          - '@types/react*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group testing dependencies
+      testing:
+        patterns:
+          - '*jest*'
+          - '*testing*'
+          - 'vitest*'
+          - '@testing-library/*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group build tools
+      build-tools:
+        patterns:
+          - '*webpack*'
+          - '*rollup*'
+          - '*vite*'
+          - '*esbuild*'
+          - 'nx'
+          - '@nx/*'
+        update-types:
+          - 'minor'
+          - 'patch'
+    ignore:
+      # Ignore major version updates for these packages (handle manually)
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'nx'
+        update-types: ['version-update:semver-major']
+      # Ignore specific packages that require manual updates
+      - dependency-name: 'node'
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+
+  # GitHub Actions updates
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 5
+    assignees:
+      - 'Toshinaki' # Replace with your GitHub username
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'github-actions'
+      - 'automated'
+    groups:
+      github-actions:
+        patterns:
+          - '*'

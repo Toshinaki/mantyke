@@ -142,8 +142,8 @@ package/node_modules
 package/LICENSE
 package/README.md
 
-docs/next-env.d.ts
-docs/docgen.json
+apps/docs/next-env.d.ts
+apps/docs/docgen.json
 
 
 

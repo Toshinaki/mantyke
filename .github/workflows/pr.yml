@@ -1,0 +1,102 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [master, develop]
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Nx cache
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Lint affected projects
+        run: pnpm nx affected -t lint --parallel=3
+
+      - name: Type check affected projects
+        run: pnpm nx affected -t type-check --parallel=3
+
+      - name: Test affected projects
+        run: pnpm nx affected -t test --parallel=3 --coverage
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 7
+
+      - name: Build affected projects
+        run: pnpm nx affected -t build --parallel=3
+
+      - name: Check for changesets
+        id: changeset-check
+        run: |
+          if [ "${{ github.event.pull_request.user.login }}" != "renovate[bot]" ] && [ "${{ github.event.pull_request.user.login }}" != "dependabot[bot]" ]; then
+            if ! pnpm changeset status --since=origin/master 2>/dev/null; then
+              echo "⚠️ No changesets found. If this PR includes user-facing changes, please add a changeset."
+              echo "Run: pnpm changeset"
+              echo "has-changeset=false" >> $GITHUB_OUTPUT
+            else
+              echo "✅ Changesets found"
+              echo "has-changeset=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "🤖 Bot PR detected, skipping changeset check"
+            echo "has-changeset=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment changeset status
+        if: steps.changeset-check.outputs.has-changeset == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **No changesets detected**\n\nIf this PR includes user-facing changes, please add a changeset by running:\n```bash\npnpm changeset\n```'
+            });

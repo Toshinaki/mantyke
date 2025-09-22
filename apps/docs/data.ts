@@ -1,5 +1,5 @@
 export interface PackageData {
-  /** Package name as in npm, for example, `mantine-extension-template` */
+  /** Package name as in npm */
   packageName: string;
 
   /** Description of the package, displayed below the title in documentation */
@@ -25,15 +25,16 @@ export interface PackageData {
 }
 
 export const PACKAGE_DATA: PackageData = {
-  packageName: 'mantine-extension-template',
+  packageName: '@mantyke/spotlight-image',
   packageDescription:
-    'A template for mantine extensions, includes full setup for package development and documentation',
+    'React component for displaying images with zoom, pan, and fullscreen capabilities.',
   mdxFileUrl:
     'https://github.com/rtivital/mantine-extension-template/blob/master/docs/pages/index.mdx',
-  repositoryUrl: 'https://github.com/rtivital/mantine-extension-template',
-  licenseUrl: 'https://github.com/rtivital/mantine-extension-template/blob/master/LICENSE',
+  repositoryUrl:
+    'https://github.com/Toshinaki/mantyke/blob/master/packages/spotlight-image/src/spotlight-image.tsx',
+  licenseUrl: 'https://github.com/Toshinaki/mantyke/blob/master/LICENSE',
   author: {
-    name: 'Vitaly Rtishchev',
-    githubUsername: 'rtivital',
+    name: 'JM',
+    githubUsername: 'Toshinaki',
   },
 };

@@ -1,5 +1,5 @@
-import { TestComponentStylesApi } from './TestComponent.styles-api';
+import { SpotlightImageStylesApi } from './spotlight-image.styles-api';
 
 export const STYLES_API_DATA = {
-  TestComponent: TestComponentStylesApi,
+  SpotlightImage: SpotlightImageStylesApi,
 };
