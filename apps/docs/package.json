@@ -24,7 +24,7 @@
     "@types/mdx": "^2.0.13",
     "clsx": "^2.1.1",
     "@mantyke/spotlight-image": "workspace:*",
-    "next": "15.3.2",
+    "next": "15.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remark-slug": "^7.0.1",
@@ -35,6 +35,6 @@
     "@types/node": "^22.15.24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "5.8.3"
+    "typescript": "5.9.2"
   }
 }
