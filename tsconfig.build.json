@@ -10,6 +10,7 @@
   ],
   "compilerOptions": {
     "emitDeclarationOnly": true,
-    "declarationDir": "temp/types"
+    "declarationDir": "temp/types",
+    "rootDir": "."
   }
 }
