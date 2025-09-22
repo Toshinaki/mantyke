@@ -23,8 +23,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -51,14 +49,17 @@ jobs:
       - name: Setup Nx cache
         uses: nrwl/nx-set-shas@v4
 
+      - name: Build affected projects
+        run: pnpm nx affected -t build --parallel=3 --exclude=mantyke-docs
+
       - name: Generate documentation
         run: pnpm run docgen
 
-      - name: Lint affected projects
-        run: pnpm nx affected -t lint --parallel=3
-
       - name: Type check affected projects
         run: pnpm nx affected -t typecheck --parallel=3
+
+      - name: Lint affected projects
+        run: pnpm nx affected -t lint --parallel=3
 
       - name: Test affected projects
         run: pnpm nx affected -t test --parallel=3 --coverage
@@ -71,8 +72,8 @@ jobs:
           path: coverage/
           retention-days: 7
 
-      - name: Build affected projects
-        run: pnpm nx affected -t build --parallel=3
+      - name: Build docs
+        run: pnpm nx build mantyke-docs
 
       - name: Check for changesets
         id: changeset-check
@@ -93,7 +94,7 @@ jobs:
 
       - name: Comment changeset status
         if: steps.changeset-check.outputs.has-changeset == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({

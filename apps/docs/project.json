@@ -5,6 +5,7 @@
   "projectType": "application",
   "targets": {
     "build": {
+      "dependsOn": ["^build"],
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/.next", "{projectRoot}/out"],
       "options": {

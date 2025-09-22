@@ -11,7 +11,7 @@ async function generateDts() {
     await $`pnpm tsc --project tsconfig.build.json`;
 
     for (const pkg of packages) {
-      const tempPath = path.join(process.cwd(), `temp/types/${pkg}/src`);
+      const tempPath = path.join(process.cwd(), `temp/types/packages/${pkg}/src`);
       const targetDir = path.join(process.cwd(), `packages/${pkg}/dist/types`);
 
       if (fs.existsSync(tempPath)) {
