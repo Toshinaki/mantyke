@@ -1,6 +1,6 @@
 {
   "name": "@mantyke/spotlight-image",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React component for displaying images with zoom, pan, and fullscreen capabilities.",
   "homepage": "https://github.com/Toshinaki/mantyke/tree/master/packages/spotlight-image#readme",
   "packageManager": "pnpm@10.12.1",
