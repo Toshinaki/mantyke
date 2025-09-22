@@ -1,39 +1,215 @@
-# Mantine Extension Template
+# Mantyke
 
-This is a template repository for creating Mantine extensions. It includes all necessary configuration files and scripts to get you started.
+A collection of Mantine UI extension components built with TypeScript, organized as a pnpm monorepo with Nx orchestration.
 
-## Get started
+## Packages
 
-1. Click "Use this template" button at the top of the page to create a new repository based on this template.
-2. Clone the repository to your local machine and install dependencies (`yarn`)
-3. Run `nvm use` to switch to the correct node version
-4. Come up with a name for your extension and replace all occurrences of `mantine-extension-template` with your extension name
-5. Change `repository` field in [packages/extension/package.json](https://github.com/mantinedev/extension-template/blob/master/packages/extension/package.json) to point to your repository
-6. Run `npm run docgen` to generate files required for documentation
-7. To verify that everything works correctly, run `npm run build` and `npm test` to build and test your initial setup
-8. All good! Start developing your extension.
+- **[@mantyke/spotlight-image](./packages/spotlight-image)** - Interactive image component with zoom and pan functionality
 
-## Local development
+## Tech Stack
 
-To develop your extension locally, run the following commands:
+- **Package Manager**: pnpm with workspaces
+- **Build Orchestration**: Nx
+- **Build Tool**: Rollup with TypeScript
+- **Version Management**: Changesets
+- **Documentation**: Next.js
+- **Testing**: Jest + React Testing Library
+- **Linting**: ESLint with TypeScript ESLint
+- **CI/CD**: GitHub Actions
 
-- Run `npm run storybook` to start the storybook
-- Run `npm run dev` to start the documentation
-- To regenerate props documentation, run `npm run docgen`
+## Getting Started
 
-## Publishing package
+### Prerequisites
 
-1. Login with your npm account by running `npm login`, if you have 2FA enabled, [generate automation token](https://docs.npmjs.com/creating-and-viewing-access-tokens) and add it to your `~/.npmrc` file
-2. Make sure that your package name is unique and does not exist on npm yet
-3. Run `npm run release:patch`, `npm run release:minor` or `npm run release:major` to publish new version of your package
+- Node.js 20+
+- pnpm 9+
 
-## Publish documentation
+### Installation
 
-By default, the documentation is deployed to GitHub Pages. The script to deploy documentation runs automatically when the package is published. In order for
-this script to work correctly, you need to make sure that `repository` field in [packages/extension/package.json](https://github.com/mantinedev/extension-template/blob/master/packages/extension/package.json) points to your repository.
+```bash
+# Install pnpm globally if not already installed
+npm install -g pnpm
 
-To publish documentation manually, run `npm run docs:deploy`.
+# Install dependencies
+pnpm install
 
-## README file of your extension
+# Build all packages
+pnpm run build
+```
 
-`README.md` file at the root repository directory (file that you are currently reading) is copied to to `package/README.md` during the build process to avoid duplication. To add content to the README file of your extension, remove extension template documentation from this file and add your own content.
+### Development
+
+```bash
+# Start documentation site (with hot reload)
+pnpm run dev
+
+# Start Storybook
+pnpm run storybook
+
+# Run tests
+pnpm run test
+
+# Run linting
+pnpm run lint
+
+# Type check
+pnpm run typecheck
+```
+
+## Project Structure
+
+```
+.
+├── apps/
+│   └── docs/              # Next.js documentation site
+├── packages/
+│   └── spotlight-image/   # Component packages
+├── scripts/               # Build and utility scripts
+└── .github/workflows/     # CI/CD workflows
+```
+
+## Available Scripts
+
+### Root Level
+
+- `pnpm run build` - Build all packages
+- `pnpm run clean` - Clean all build outputs
+- `pnpm run dev` - Start docs dev server
+- `pnpm run test` - Run all tests with linting
+- `pnpm run lint` - Lint all projects
+- `pnpm run typecheck` - Type check all projects
+- `pnpm run docgen` - Generate component documentation
+- `pnpm run docs:build` - Build documentation site
+- `pnpm run storybook` - Start Storybook
+
+### Nx Commands
+
+```bash
+# Build specific package
+pnpm nx build @mantyke/spotlight-image
+
+# Run tests for specific package
+pnpm nx test @mantyke/spotlight-image
+
+# Build all packages except docs
+pnpm nx run-many -t build --exclude=mantyke-docs
+
+# See affected projects
+pnpm nx affected:graph
+```
+
+## Adding a New Package
+
+1. Create package structure:
+```bash
+mkdir -p packages/my-component/src
+```
+
+2. Add `package.json`:
+```json
+{
+  "name": "@mantyke/my-component",
+  "version": "0.1.0",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "peerDependencies": {
+    "@mantine/core": ">=7.0.0",
+    "react": "^18.x || ^19.x"
+  }
+}
+```
+
+3. Add `project.json` for Nx:
+```json
+{
+  "name": "@mantyke/my-component",
+  "root": "packages/my-component",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
+```
+
+4. Create component and run:
+```bash
+pnpm install
+pnpm run build
+```
+
+## Release Process
+
+This project uses [Changesets](https://github.com/changesets/changesets) for version management.
+
+### Creating a Changeset
+
+```bash
+# Add changeset for your changes
+pnpm changeset
+
+# Follow prompts to select packages and bump type
+# - patch: bug fixes
+# - minor: new features
+# - major: breaking changes
+```
+
+### Publishing
+
+Releases are automated via GitHub Actions when changesets are merged to master:
+
+1. Create changeset on your feature branch
+2. Commit changeset file
+3. Open PR and get it merged
+4. CI will automatically create a "Version Packages" PR
+5. Merge the version PR to publish to npm
+
+### Manual Release
+
+```bash
+# Version packages based on changesets
+pnpm changeset version
+
+# Build and publish
+pnpm run build
+pnpm changeset publish
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Create a changeset: `pnpm changeset`
+6. Submit a pull request
+
+### Code Quality
+
+All PRs must pass:
+- Type checking
+- Linting (ESLint + Stylelint)
+- Unit tests
+- Build validation
+
+## License
+
+MIT
+
+## Links
+
+- [Documentation] (wip)
+- [Mantine UI](https://mantine.dev)
