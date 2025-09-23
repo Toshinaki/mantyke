@@ -139,7 +139,10 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     setPosition({ x: 0, y: 0 });
   };
 
-  const handleOpen = () => {
+  const handleOpen: React.MouseEventHandler<HTMLImageElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     setIsOpen(true);
     setIsImageLoaded(false);
     setPosition({ x: 0, y: 0 });
