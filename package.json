@@ -76,7 +76,7 @@
     "gh-pages": "^6.3.0",
     "hash-css-selector": "^1.1.0",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^30.1.3",
+    "jest": "^30.2.0",
     "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^29.7.0",
     "jiti": "2.4.2",
