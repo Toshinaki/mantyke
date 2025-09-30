@@ -25,8 +25,8 @@
     "clsx": "^2.1.1",
     "@mantyke/spotlight-image": "workspace:*",
     "next": "15.3.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
     "remark-slug": "^7.0.1",
     "shiki": "^3.4.2",
     "type-fest": "^5.0.1"
