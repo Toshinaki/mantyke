@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mantine/code-highlight": "8.3.1",
-    "@mantine/core": "8.3.1",
-    "@mantine/hooks": "8.3.1",
+    "@mantine/code-highlight": "8.3.4",
+    "@mantine/core": "8.3.4",
+    "@mantine/hooks": "8.3.4",
     "@mantinex/demo": "^2.0.0",
     "@mantinex/dev-icons": "^2.0.0",
     "@mantinex/mantine-header": "^2.0.0",
@@ -19,22 +19,22 @@
     "@mantinex/mantine-meta": "^2.0.0",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
-    "@next/mdx": "^15.3.2",
+    "@next/mdx": "^15.5.4",
     "@tabler/icons-react": "^3.33.0",
     "@types/mdx": "^2.0.13",
     "clsx": "^2.1.1",
     "@mantyke/spotlight-image": "workspace:*",
-    "next": "15.3.2",
+    "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remark-slug": "^7.0.1",
     "shiki": "^3.4.2",
-    "type-fest": "^5.0.1"
+    "type-fest": "^5.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.24",
+    "@types/node": "^22.18.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   }
 }
