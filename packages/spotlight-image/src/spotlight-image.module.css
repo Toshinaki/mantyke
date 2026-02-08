@@ -1,4 +1,4 @@
-.originalImage {
+.root {
   cursor: pointer;
   max-width: 100%;
   height: auto;
@@ -9,7 +9,8 @@
   box-shadow: none;
 }
 
-.modalContent {
+/* add precedence to css */
+section.modalContent {
   background-color: transparent;
 }
 
