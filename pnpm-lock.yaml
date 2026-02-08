@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@mantine-tests/core>react': 19.2.4
+  '@mantine-tests/core>react-dom': 19.2.4
+
 importers:
 
   .:
@@ -1852,8 +1856,8 @@ packages:
   '@mantine-tests/core@2.0.0':
     resolution: {integrity: sha512-D6ktuI5sWMyaskgAYzCtBvr/L8rn6x551OhjB51bqT2BCTH+a5av4NIPqhhh5OaGpHbZPU2AgdDXUadcyPzSfA==}
     peerDependencies:
-      react: ^18.x || ^19.x
-      react-dom: ^18.x || ^19.x
+      react: 19.2.4
+      react-dom: 19.2.4
 
   '@mantine/code-highlight@8.3.14':
     resolution: {integrity: sha512-7ywMnadaw4O/QG9sQOCIWPZKh6Q97ibyZgkH2cjVNvVbChmZKXIlcHW/QbQJUS84Bs/eGDhnkxwnq78v9w16gQ==}
