@@ -71,6 +71,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     style,
     styles,
     unstyled,
+    attributes,
     vars,
     src,
     alt,
@@ -91,6 +92,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     classNames,
     styles,
     unstyled,
+    attributes,
     vars,
   });
 
