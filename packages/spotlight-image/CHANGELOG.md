@@ -1,5 +1,11 @@
 # @mantyke/spotlight-image
 
+## 0.2.1
+
+### Patch Changes
+
+- eb8e04f: Block default onClick event
+
 ## 0.2.0
 
 ### Minor Changes
