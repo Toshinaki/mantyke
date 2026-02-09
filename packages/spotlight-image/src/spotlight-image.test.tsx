@@ -26,14 +26,14 @@ describe('@mantyke/spotlight-image/SpotlightImage', () => {
   it('renders image with correct src and alt', () => {
     render(<SpotlightImage src="test.jpg" alt="test image" />);
     expect(screen.getByAltText('test image')).toBeInTheDocument();
-    expect(screen.getByRole('img')).toHaveAttribute('src', 'test.jpg');
+    expect(screen.getByAltText('test image')).toHaveAttribute('src', 'test.jpg');
   });
 
   it('opens modal on click', async () => {
     render(<SpotlightImage src="test.jpg" alt="test image" />);
 
     await act(async () => {
-      screen.getByRole('img').click();
+      screen.getByAltText('test image').click();
     });
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();

@@ -1,0 +1,144 @@
+diff --git a/cjs/shared/it-supports-style-api.cjs b/cjs/shared/it-supports-style-api.cjs
+index c267533dadbe6a9b44453f681b08027071bea175..95735aa9f5185b5a72ca748b28fb9f04cebcbe69 100644
+--- a/cjs/shared/it-supports-style-api.cjs
++++ b/cjs/shared/it-supports-style-api.cjs
+@@ -74,7 +74,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+           options.component,
+           {
+             ...options.props,
+-            "data-test": "orange",
++            "data-test": "rgb(250, 128, 114)",
+             classNames,
+             styles
+           }
+@@ -82,7 +82,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+       );
+       options.selectors.forEach((selector) => {
+         expect(container.querySelector(`.${classNames[selector]}`)).toHaveStyle({
+-          ...styles(core.DEFAULT_THEME, { "data-test": "orange" })[selector]
++          ...styles(core.DEFAULT_THEME, { "data-test": "rgb(250, 128, 114)" })[selector]
+         });
+       });
+     });
+@@ -168,7 +168,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+         };
+         return acc;
+       }, {});
+-      const { container } = render.render(/* @__PURE__ */ jsxRuntime.jsx(options.component, { ...options.props, "data-test": "orange" }), {
++      const { container } = render.render(/* @__PURE__ */ jsxRuntime.jsx(options.component, { ...options.props, "data-test": "rgb(250, 128, 114)" }), {
+         components: {
+           [options.providerName]: {
+             styles,
+@@ -179,7 +179,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+       options.selectors.forEach((selector) => {
+         try {
+           expect(container.querySelector(`.${classNames[selector]}`)).toHaveStyle({
+-            ...styles(core.DEFAULT_THEME, { "data-test": "orange" })[selector]
++            ...styles(core.DEFAULT_THEME, { "data-test": "rgb(250, 128, 114)" })[selector]
+           });
+         } catch (e) {
+           throw new Error(`Missing selector: .test-${options.providerName}-${selector}`);
+diff --git a/cjs/shared/it-supports-style.cjs b/cjs/shared/it-supports-style.cjs
+index 2641b3703fbffda211211c63a740fffe64d3d700..c15dbc344eb0712a29aa95ab1adee1fb10134723 100644
+--- a/cjs/shared/it-supports-style.cjs
++++ b/cjs/shared/it-supports-style.cjs
+@@ -8,10 +8,10 @@ var render = require('../render.cjs');
+ function itSupportsStyle(options, name = "supports style") {
+   it(`${name}: object`, () => {
+     const { container } = render.render(
+-      /* @__PURE__ */ jsxRuntime.jsx(options.component, { ...options.props, style: { color: "salmon" } })
++      /* @__PURE__ */ jsxRuntime.jsx(options.component, { ...options.props, style: { color: "rgb(250, 128, 114)" } })
+     );
+     expect(container.querySelector(options.selector || "*:not(style)")).toHaveStyle({
+-      color: "salmon"
++      color: "rgb(250, 128, 114)"
+     });
+   });
+   it(`${name}: theme function`, () => {
+@@ -34,12 +34,12 @@ function itSupportsStyle(options, name = "supports style") {
+         options.component,
+         {
+           ...options.props,
+-          style: [{ color: "salmon" }, { background: "olive" }]
++          style: [{ color: "rgb(250, 128, 114)" }, { background: "olive" }]
+         }
+       )
+     );
+     expect(container.querySelector(options.selector || "*:not(style)")).toHaveStyle({
+-      color: "salmon",
++      color: "rgb(250, 128, 114)",
+       background: "olive"
+     });
+   });
+diff --git a/esm/shared/it-supports-style-api.mjs b/esm/shared/it-supports-style-api.mjs
+index 8f2c0438b12832d977addbd5256502dd09a62580..d5520783ff00cde228d6c8002ebf75b8bc02d4d5 100644
+--- a/esm/shared/it-supports-style-api.mjs
++++ b/esm/shared/it-supports-style-api.mjs
+@@ -72,7 +72,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+           options.component,
+           {
+             ...options.props,
+-            "data-test": "orange",
++            "data-test": "rgb(250, 128, 114)",
+             classNames,
+             styles
+           }
+@@ -80,7 +80,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+       );
+       options.selectors.forEach((selector) => {
+         expect(container.querySelector(`.${classNames[selector]}`)).toHaveStyle({
+-          ...styles(DEFAULT_THEME, { "data-test": "orange" })[selector]
++          ...styles(DEFAULT_THEME, { "data-test": "rgb(250, 128, 114)" })[selector]
+         });
+       });
+     });
+@@ -166,7 +166,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+         };
+         return acc;
+       }, {});
+-      const { container } = render(/* @__PURE__ */ jsx(options.component, { ...options.props, "data-test": "orange" }), {
++      const { container } = render(/* @__PURE__ */ jsx(options.component, { ...options.props, "data-test": "rgb(250, 128, 114)" }), {
+         components: {
+           [options.providerName]: {
+             styles,
+@@ -177,7 +177,7 @@ function itSupportsStylesApi(options, name = "supports styles api") {
+       options.selectors.forEach((selector) => {
+         try {
+           expect(container.querySelector(`.${classNames[selector]}`)).toHaveStyle({
+-            ...styles(DEFAULT_THEME, { "data-test": "orange" })[selector]
++            ...styles(DEFAULT_THEME, { "data-test": "rgb(250, 128, 114)" })[selector]
+           });
+         } catch (e) {
+           throw new Error(`Missing selector: .test-${options.providerName}-${selector}`);
+diff --git a/esm/shared/it-supports-style.mjs b/esm/shared/it-supports-style.mjs
+index 51e41cb2bdb4364afce4537ede3f728e75e39f65..48f53cb2f05fc8727b83d014594b18abcf2f2cbf 100644
+--- a/esm/shared/it-supports-style.mjs
++++ b/esm/shared/it-supports-style.mjs
+@@ -6,10 +6,10 @@ import { render } from '../render.mjs';
+ function itSupportsStyle(options, name = "supports style") {
+   it(`${name}: object`, () => {
+     const { container } = render(
+-      /* @__PURE__ */ jsx(options.component, { ...options.props, style: { color: "salmon" } })
++      /* @__PURE__ */ jsx(options.component, { ...options.props, style: { color: "rgb(250, 128, 114)" } })
+     );
+     expect(container.querySelector(options.selector || "*:not(style)")).toHaveStyle({
+-      color: "salmon"
++      color: "rgb(250, 128, 114)"
+     });
+   });
+   it(`${name}: theme function`, () => {
+@@ -32,12 +32,12 @@ function itSupportsStyle(options, name = "supports style") {
+         options.component,
+         {
+           ...options.props,
+-          style: [{ color: "salmon" }, { background: "olive" }]
++          style: [{ color: "rgb(250, 128, 114)" }, { background: "olive" }]
+         }
+       )
+     );
+     expect(container.querySelector(options.selector || "*:not(style)")).toHaveStyle({
+-      color: "salmon",
++      color: "rgb(250, 128, 114)",
+       background: "olive"
+     });
+   });

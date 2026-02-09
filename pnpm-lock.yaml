@@ -8,6 +8,11 @@ overrides:
   '@mantine-tests/core>react': 19.2.4
   '@mantine-tests/core>react-dom': 19.2.4
 
+patchedDependencies:
+  '@mantine-tests/core':
+    hash: 9726b4d5213eac11c780a3f5d4c398f4445e7458c23ae2fc827b51740e705fe1
+    path: patches/@mantine-tests__core.patch
+
 importers:
 
   .:
@@ -23,7 +28,7 @@ importers:
         version: 4.7.1(prettier@3.8.1)
       '@mantine-tests/core':
         specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 2.0.0(patch_hash=9726b4d5213eac11c780a3f5d4c398f4445e7458c23ae2fc827b51740e705fe1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@mantine/core':
         specifier: 8.3.14
         version: 8.3.14(@mantine/hooks@8.3.14(react@19.2.4))(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -11412,7 +11417,7 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
-  '@mantine-tests/core@2.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@mantine-tests/core@2.0.0(patch_hash=9726b4d5213eac11c780a3f5d4c398f4445e7458c23ae2fc827b51740e705fe1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)

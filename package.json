@@ -116,6 +116,9 @@
     "overrides": {
       "@mantine-tests/core>react": "19.2.4",
       "@mantine-tests/core>react-dom": "19.2.4"
+    },
+    "patchedDependencies": {
+      "@mantine-tests/core": "patches/@mantine-tests__core.patch"
     }
   }
 }
