@@ -1,3 +1,5 @@
+[English](README.md) | [中文](docs/README.zh-CN.md)
+
 # Mantyke
 
 A collection of Mantine UI extension components built with TypeScript, organized as a pnpm monorepo with Nx orchestration.
