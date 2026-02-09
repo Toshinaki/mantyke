@@ -30,7 +30,8 @@ export type SpotlightImageStylesNames = 'root';
 export type SpotlightImageCssVariables = {};
 
 export interface SpotlightImageProps
-  extends Omit<ImageProps, 'onClick' | keyof StylesApiProps<SpotlightImageFactory>>,
+  extends
+    Omit<ImageProps, 'onClick' | keyof StylesApiProps<SpotlightImageFactory>>,
     StylesApiProps<SpotlightImageFactory>,
     ElementProps<'img', keyof ImageProps | 'onClick'> {
   /** Image fit behavior when clicked to open spotlight, 'cover' by default */
