@@ -85,7 +85,3 @@ section.modalContent {
 .imageLoaded {
   opacity: 1;
 }
-
-.noTransition {
-  transition: none;
-}

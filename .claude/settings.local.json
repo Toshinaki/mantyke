@@ -7,6 +7,9 @@
       "Bash(git checkout:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: add docs deploy workflow and remove legacy release scripts\n\n- Add docs.yml workflow to auto-deploy docs to GitHub Pages after CI success\n- Remove release:patch/minor/major scripts \\(replaced by Changesets\\)\n- Remove scripts/release.ts, run.ts, update-version.ts\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(pnpm nx test:*)",
+      "Bash(pnpm run storybook:*)",
+      "Bash(npm view:*)",
       "Bash(git pull:*)"
     ]
   }
