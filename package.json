@@ -21,7 +21,7 @@
     "docgen": "tsx scripts/docgen",
     "dev": "pnpm docgen && cd apps/docs && pnpm dev",
     "docs:build": "pnpm docgen && cd apps/docs && pnpm build",
-"storybook": "storybook dev -p 8271",
+    "storybook": "storybook dev -p 8271",
     "syncpack": "syncpack list-mismatches",
     "syncpack:format": "syncpack format",
     "release": "changeset publish"
