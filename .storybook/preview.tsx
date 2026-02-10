@@ -2,13 +2,10 @@ import type { Preview } from '@storybook/react';
 
 import '@mantine/core/styles.css';
 
-import React from 'react';
 import { MantineProvider } from '@mantine/core';
 
-export const decorators = [
-  (renderStory: any) => <MantineProvider>{renderStory()}</MantineProvider>,
-];
-
-const preview: Preview = {};
+const preview: Preview = {
+  decorators: [(renderStory) => <MantineProvider>{renderStory()}</MantineProvider>],
+};
 
 export default preview;

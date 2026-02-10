@@ -15,9 +15,6 @@ const config: StorybookConfig = {
     name: getAbsolutePath('@storybook/react-vite'),
     options: {},
   },
-  docs: {
-    autodocs: false,
-  },
 };
 
 export default config;

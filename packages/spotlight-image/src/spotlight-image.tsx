@@ -197,22 +197,14 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       const { zoom: z, position: pos } = stateRef.current;
       setZoom(z);
       setPosition({ x: pos.x, y: pos.y });
-      // Remove noTransition class now that continuous zoom is done
-      imageTransformRef.current?.classList.remove(classes.noTransition);
     }, 150);
   }, []);
 
   /**
-   * Apply a zoom change directly to the DOM for smooth, jank-free updates.
-   * Adds the noTransition class to prevent the CSS transition from fighting
-   * with rapid DOM writes, then schedules a debounced React state sync.
+   * Apply a zoom change directly to the DOM, then debounce a React state sync.
    */
   const applyZoomDirect = useCallback(
     (newZoom: number) => {
-      const el = imageTransformRef.current;
-      if (el) {
-        el.classList.add(classes.noTransition);
-      }
       stateRef.current.zoom = newZoom;
       updateTransform(stateRef.current.position.x, stateRef.current.position.y, newZoom);
       syncStateFromRef();
@@ -537,7 +529,6 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
               fit="contain"
               onLoad={handleImageLoad}
               className={clsx(classes.modalImage, {
-                [classes.noTransition]: isDragging,
                 [classes.imageLoaded]: isImageLoaded,
               })}
               style={{
