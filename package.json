@@ -4,7 +4,7 @@
   "description": "This package.json is not published to npm, modify the file in packages/extension/package.json",
   "packageManager": "pnpm@10.12.1",
   "repository": {
-    "url": "https://github.com/mantinedev/extension-template.git",
+    "url": "https://github.com/Toshinaki/mantyke.git",
     "type": "git"
   },
   "scripts": {
@@ -24,7 +24,7 @@
     "docgen": "tsx scripts/docgen",
     "dev": "pnpm docgen && cd apps/docs && pnpm dev",
     "docs:build": "pnpm docgen && cd apps/docs && pnpm build",
-    "docs:deploy": "pnpm docs:build && tsx scripts/nojekyll && gh-pages -d docs/out -t",
+    "docs:deploy": "pnpm docs:build && tsx scripts/nojekyll && gh-pages -d apps/docs/out -t",
     "storybook": "storybook dev -p 8271",
     "syncpack": "syncpack list-mismatches",
     "syncpack:format": "syncpack format",
