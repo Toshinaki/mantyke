@@ -1,5 +1,11 @@
 # @mantyke/spotlight-image
 
+## 0.2.2
+
+### Patch Changes
+
+- 7a1a09c: fix bugs & add touch support
+
 ## 0.2.1
 
 ### Patch Changes
