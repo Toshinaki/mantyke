@@ -44,7 +44,7 @@ export default packages.map((pkg) => {
       replace({ preventAssignment: true }),
       postcss({
         extract: true,
-        modules: { generateScopedName: createGenerateScopedName('me') },
+        modules: { generateScopedName: createGenerateScopedName('mantyke') },
         minimize: true,
       }),
       banner((chunk) => {
