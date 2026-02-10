@@ -7,6 +7,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  id-token: write # 必需：为 OIDC 颁发 token
+  contents: write # 必需：创建 GitHub Release 和提交版本更新
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -28,8 +32,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Get pnpm store directory
         shell: bash
@@ -69,11 +74,10 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
+          publish: pnpm release --provenance --access public
           commit: 'chore: release packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Releases
         if: steps.changesets.outputs.published == 'true'
