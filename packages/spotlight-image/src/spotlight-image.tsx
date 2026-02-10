@@ -135,6 +135,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
    */
   const stateRef = useRef({ zoom: 1, initialZoom: 1, position: { x: 0, y: 0 } });
   stateRef.current = { zoom, initialZoom, position };
+  /** Timer ID for debounced sync of stateRef back to React state after zoom */
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Destructure `ref` from `useFullscreen` so we can attach it to the
   // spotlight container instead of letting it default to `document.documentElement`.
   const { ref: fullscreenRef, toggle: toggleFullscreen, fullscreen } = useFullscreen();
@@ -181,25 +183,61 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     setIsImageLoaded(true);
   };
 
+  /**
+   * Flush stateRef values back to React state after zoom interaction settles.
+   * Debounced: resets the timer on every call so rapid wheel/pinch events
+   * produce only a single React re-render once the user pauses.
+   */
+  const syncStateFromRef = useCallback(() => {
+    if (syncTimerRef.current !== null) {
+      clearTimeout(syncTimerRef.current);
+    }
+    syncTimerRef.current = setTimeout(() => {
+      syncTimerRef.current = null;
+      const { zoom: z, position: pos } = stateRef.current;
+      setZoom(z);
+      setPosition({ x: pos.x, y: pos.y });
+      // Remove noTransition class now that continuous zoom is done
+      imageTransformRef.current?.classList.remove(classes.noTransition);
+    }, 150);
+  }, []);
+
+  /**
+   * Apply a zoom change directly to the DOM for smooth, jank-free updates.
+   * Adds the noTransition class to prevent the CSS transition from fighting
+   * with rapid DOM writes, then schedules a debounced React state sync.
+   */
+  const applyZoomDirect = useCallback(
+    (newZoom: number) => {
+      const el = imageTransformRef.current;
+      if (el) {
+        el.classList.add(classes.noTransition);
+      }
+      stateRef.current.zoom = newZoom;
+      updateTransform(stateRef.current.position.x, stateRef.current.position.y, newZoom);
+      syncStateFromRef();
+    },
+    [syncStateFromRef]
+  );
+
   const handleZoomIn = useCallback(() => {
-    setZoom((prev) => Math.min(prev * zoomSpeed, maxZoom));
-  }, [maxZoom, zoomSpeed]);
+    const newZoom = Math.min(stateRef.current.zoom * zoomSpeed, maxZoom);
+    applyZoomDirect(newZoom);
+  }, [maxZoom, zoomSpeed, applyZoomDirect]);
 
   const handleZoomOut = useCallback(() => {
-    setZoom((prev) => {
-      const newZoom = Math.max(prev / zoomSpeed, minZoom);
-      // Reset position when zooming back to fit-to-screen level
-      if (newZoom <= stateRef.current.initialZoom) {
-        setPosition({ x: 0, y: 0 });
-      }
-      return newZoom;
-    });
-  }, [zoomSpeed, minZoom]);
+    const newZoom = Math.max(stateRef.current.zoom / zoomSpeed, minZoom);
+    // Reset position when zooming back to fit-to-screen level
+    if (newZoom <= stateRef.current.initialZoom) {
+      stateRef.current.position = { x: 0, y: 0 };
+    }
+    applyZoomDirect(newZoom);
+  }, [zoomSpeed, minZoom, applyZoomDirect]);
 
   const handleZoomReset = useCallback(() => {
-    setZoom(stateRef.current.initialZoom);
-    setPosition({ x: 0, y: 0 });
-  }, []);
+    stateRef.current.position = { x: 0, y: 0 };
+    applyZoomDirect(stateRef.current.initialZoom);
+  }, [applyZoomDirect]);
 
   // ── Wheel handling ─────────────────────────────────────────────────────────
 
@@ -257,6 +295,10 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   };
 
   const handleClose = () => {
+    if (syncTimerRef.current !== null) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
     setIsOpen(false);
     setZoom(1);
     setInitialZoom(1);
@@ -397,7 +439,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       const prevDist = touchRef.current.lastDistance;
       if (prevDist > 0) {
         const scale = newDist / prevDist;
-        setZoom((prev) => Math.min(Math.max(prev * scale, minZoom), maxZoom));
+        const newZoom = Math.min(Math.max(stateRef.current.zoom * scale, minZoom), maxZoom);
+        applyZoomDirect(newZoom);
       }
       touchRef.current.lastDistance = newDist;
     }
