@@ -10,7 +10,10 @@
       "Bash(pnpm nx test:*)",
       "Bash(pnpm run storybook:*)",
       "Bash(npm view:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(find:*)"
     ]
   }
 }

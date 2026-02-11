@@ -313,6 +313,24 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/masonry:
+    dependencies:
+      '@mantine/core':
+        specifier: '>=7.0.0'
+        version: 8.3.14(@mantine/hooks@8.3.14(react@19.2.4))(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@mantine/hooks':
+        specifier: '>=7.0.0'
+        version: 8.3.14(react@19.2.4)
+      clsx:
+        specifier: '>=2.0.0'
+        version: 2.1.1
+      react:
+        specifier: ^18.x || ^19.x
+        version: 19.2.4
+      react-dom:
+        specifier: ^18.x || ^19.x
+        version: 19.2.4(react@19.2.4)
+
   packages/spotlight-image:
     dependencies:
       '@mantine/core':
