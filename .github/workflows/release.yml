@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  pull-requests: write
   id-token: write # 必需：为 OIDC 颁发 token
   contents: write # 必需：创建 GitHub Release 和提交版本更新
 
