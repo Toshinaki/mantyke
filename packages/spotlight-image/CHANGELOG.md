@@ -1,5 +1,11 @@
 # @mantyke/spotlight-image
 
+## 0.2.3
+
+### Patch Changes
+
+- 47f2b62: Fix zoom frame drops by applying direct DOM updates to all zoom operations (wheel, keyboard, pinch, buttons) with debounced React state sync
+
 ## 0.2.2
 
 ### Patch Changes
