@@ -1,0 +1,66 @@
+.root {
+  width: 100%;
+}
+
+/* columns variant */
+.root[data-variant='columns'] {
+  display: flex;
+  gap: var(--masonry-gap);
+}
+
+.root[data-variant='columns'] > .column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--masonry-gap);
+}
+
+.item[data-variant='columns'] {
+  overflow: hidden;
+}
+
+.item[data-variant='columns'] > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* masonry variant */
+.root[data-variant='masonry'] {
+  display: flex;
+  gap: var(--masonry-gap);
+}
+
+.root[data-variant='masonry'] > .column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: var(--masonry-gap);
+}
+
+.root[data-variant='masonry'] .item > * {
+  max-width: 100%;
+  height: auto;
+}
+
+/* rows variant */
+.root[data-variant='rows'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--masonry-gap);
+}
+
+.root[data-variant='rows'] > .column {
+  display: flex;
+  gap: var(--masonry-gap);
+}
+
+.item[data-variant='rows'] {
+  overflow: hidden;
+}
+
+.item[data-variant='rows'] > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

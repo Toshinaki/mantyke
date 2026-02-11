@@ -1,0 +1,45 @@
+{
+  "name": "@mantyke/masonry",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Masonry layout component for Mantine with columns, masonry, and rows variants.",
+  "homepage": "https://github.com/Toshinaki/mantyke/tree/master/packages/masonry#readme",
+  "packageManager": "pnpm@10.12.1",
+  "license": "MIT",
+  "author": "Toshinaki <futurebefree@gmail.com> (https://re-jeunesse.org/)",
+  "keywords": [
+    "extension",
+    "mantine",
+    "masonry",
+    "layout",
+    "grid"
+  ],
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.mts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./styles.css": "./dist/styles.css",
+    "./styles.layer.css": "./dist/styles.layer.css"
+  },
+  "repository": "https://github.com/Toshinaki/mantyke.git",
+  "peerDependencies": {
+    "@mantine/core": ">=7.0.0",
+    "@mantine/hooks": ">=7.0.0",
+    "clsx": ">=2.0.0",
+    "react": "^18.x || ^19.x",
+    "react-dom": "^18.x || ^19.x"
+  },
+  "bugs": "https://github.com/Toshinaki/mantyke/issues"
+}
