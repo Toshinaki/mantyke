@@ -54,7 +54,13 @@ const meta: Meta<MasonryProps> = {
     rows: 2,
     gap: 'md',
   },
-  decorators: [(Story) => <div style={{ padding: 40 }}><Story /></div>],
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 40 }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
