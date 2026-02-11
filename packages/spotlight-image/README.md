@@ -37,7 +37,7 @@ pnpm add @mantyke/spotlight-image
 ### Peer Dependencies
 
 ```bash
-pnpm add @mantine/core @mantine/hooks react react-dom
+pnpm add @mantine/core @mantine/hooks @tabler/icons-react react react-dom
 ```
 
 ## Usage
@@ -100,7 +100,7 @@ Extends `ImageProps` from `@mantine/core`.
 | `zoomSpeed`  | `number`                                                   | `1.2`        | Zoom multiplier per step      |
 | `maxZoom`    | `number`                                                   | `5`          | Maximum zoom level            |
 | `minZoom`    | `number`                                                   | `0.25`       | Minimum zoom level            |
-| `modalProps` | `ModalProps`                                               | `{}`         | Props passed to Mantine Modal |
+| `modalProps` | `Omit<ModalProps, 'opened' \| 'onClose' \| 'fullScreen' \| 'withCloseButton'>` | `{}`         | Props passed to Mantine Modal |
 | `width`      | `number \| string`                                         | -            | Image width                   |
 | `height`     | `number \| string`                                         | -            | Image height                  |
 | `radius`     | `MantineRadius`                                            | -            | Border radius                 |
@@ -119,10 +119,16 @@ Extends `ImageProps` from `@mantine/core`.
 - **Mouse wheel** - Zoom in/out
 - **Click & drag** - Pan when zoomed
 
+### Touch
+
+- **Tap image** - Open spotlight view
+- **Pinch** - Zoom in/out
+- **Single-finger drag** - Pan when zoomed
+
 ### Buttons
 
 - **Zoom In** - Increase zoom level
-- **Zoom Out** - Decrease zoom level  
+- **Zoom Out** - Decrease zoom level
 - **Reset** - Return to fit-to-screen
 - **Fullscreen** - Toggle fullscreen mode
 - **Close** - Close spotlight
@@ -130,6 +136,10 @@ Extends `ImageProps` from `@mantine/core`.
 ### Keyboard
 
 - **ESC** - Close spotlight view
+- **+** / **=** - Zoom in
+- **-** - Zoom out
+- **0** - Reset zoom
+- **Enter** / **Space** - Open spotlight from thumbnail
 
 ## Styling
 
