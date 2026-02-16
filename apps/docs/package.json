@@ -20,7 +20,7 @@
     "@mantyke/spotlight-image": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
-    "@next/mdx": "^15.3.2",
+    "@next/mdx": "^16.1.6",
     "@tabler/icons-react": "^3.36.1",
     "@types/mdx": "^2.0.13",
     "clsx": "^2.1.1",
