@@ -24,6 +24,12 @@ pnpm run jest
 # Run tests for a specific package
 pnpm nx test @mantyke/spotlight-image
 
+# Run UI tests (Storybook stories in real Chromium, not part of `pnpm test`)
+pnpm test:ui
+
+# Regenerate UI test fixture images after editing .storybook/fixtures.ts
+pnpm fixtures:generate
+
 # Type check
 pnpm run typecheck
 
@@ -48,6 +54,7 @@ pnpm run storybook
 - **CSS Modules**: Components use `.module.css` files, processed by PostCSS with `postcss-preset-mantine`. Class names are scoped via `hash-css-selector`.
 - **Testing**: Jest with `jsdom` environment, `esbuild-jest` transform, CSS mocked via `identity-obj-proxy`. Tests use `@testing-library/react` and `@mantine-tests/core`. Test files are co-located: `<component>.test.tsx`.
 - **Stories**: Co-located Storybook stories: `<component>.story.tsx`.
+- **UI tests**: `<component>.ui-test.story.tsx` stories with `play` functions, run by `@storybook/addon-vitest` in Chromium (`vitest.config.ts`). Cases are designed from user experience in `docs/ui-test-plan.md`; when the code disagrees with a case, treat it as a likely bug instead of adjusting the case. Shared helpers and fixture specs live in `.storybook/`.
 - **Peer dependencies**: Packages depend on `@mantine/core`, `@mantine/hooks`, `@tabler/icons-react`, `clsx`, `react`, `react-dom` as peers.
 - **Versioning**: Changesets for version management. Releases publish to npm via `pnpm changeset publish`.
 - **Default branch**: `master` (Nx `defaultBase`).

@@ -103,3 +103,40 @@ jobs:
               repo: context.repo.repo,
               body: '⚠️ **No changesets detected**\n\nIf this PR includes user-facing changes, please add a changeset by running:\n```bash\npnpm changeset\n```'
             });
+
+  ui-tests:
+    name: UI Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # 已知缺陷修复之前，UI 测试的结果只作参考，不拦截合并
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run UI tests
+        run: pnpm test:ui
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-failure-screenshots
+          path: .vitest/failure-screenshots/
+          retention-days: 7

@@ -28,6 +28,7 @@
     },
     {
       "plugin": "@nx/vite/plugin",
+      "exclude": ["vitest.config.ts"],
       "options": {
         "buildTargetName": "build",
         "testTargetName": "test",

@@ -10,7 +10,9 @@ function getAbsolutePath(value: string): any {
 
 const config: StorybookConfig = {
   stories: ['../packages/*/src/**/*.story.@(js|jsx|mjs|ts|tsx)'],
-  addons: [],
+  addons: [getAbsolutePath('@storybook/addon-vitest')],
+  // UI 测试用图片，由 `pnpm fixtures:generate` 生成
+  staticDirs: ['./public'],
   framework: {
     name: getAbsolutePath('@storybook/react-vite'),
     options: {},
