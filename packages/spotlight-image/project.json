@@ -32,7 +32,7 @@
     "stylelint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "stylelint 'packages/spotlight-image/**/*.css' --cache --allow-empty-input",
+        "command": "stylelint \"packages/spotlight-image/**/*.css\" --cache",
         "cwd": "{workspaceRoot}"
       }
     }

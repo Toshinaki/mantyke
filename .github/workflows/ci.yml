@@ -61,6 +61,9 @@ jobs:
       - name: Lint all projects
         run: pnpm nx run-many -t lint
 
+      - name: Stylelint all projects
+        run: pnpm nx run-many -t stylelint
+
       - name: Test all projects
         run: pnpm nx run-many -t test --coverage
 
