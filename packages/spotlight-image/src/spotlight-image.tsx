@@ -43,7 +43,7 @@ export interface SpotlightImageProps
   /** Maximum zoom level, 5 by default */
   maxZoom?: number;
 
-  /** Minimum zoom level, 0.25 by default */
+  /** Minimum zoom level, 0.25 by default. If the fit-to-screen zoom is lower, it is used as the minimum instead */
   minZoom?: number;
 
   /** Modal props for spotlight overlay */
@@ -217,14 +217,20 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     applyZoomDirect(newZoom);
   }, [maxZoom, zoomSpeed, applyZoomDirect]);
 
+  /**
+   * 缩小的下限。图片打开时的适配缩放可能已经低于 `minZoom`（大图、窄屏），
+   * 此时以适配缩放为下限，保证缩小操作不会反而把图片放大。
+   */
+  const getMinZoom = useCallback(() => Math.min(minZoom, stateRef.current.initialZoom), [minZoom]);
+
   const handleZoomOut = useCallback(() => {
-    const newZoom = Math.max(stateRef.current.zoom / zoomSpeed, minZoom);
+    const newZoom = Math.max(stateRef.current.zoom / zoomSpeed, getMinZoom());
     // Reset position when zooming back to fit-to-screen level
     if (newZoom <= stateRef.current.initialZoom) {
       stateRef.current.position = { x: 0, y: 0 };
     }
     applyZoomDirect(newZoom);
-  }, [zoomSpeed, minZoom, applyZoomDirect]);
+  }, [zoomSpeed, getMinZoom, applyZoomDirect]);
 
   const handleZoomReset = useCallback(() => {
     stateRef.current.position = { x: 0, y: 0 };
@@ -388,8 +394,15 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     }
   };
 
+  /** 在控制按钮上按下时不开始拖动，否则点击按钮时的轻微移动会带动图片 */
+  const isFromControls = (target: EventTarget) =>
+    target instanceof Element && target.closest(`.${classes.controls}`) !== null;
+
   // Mouse events delegate to the pointer-agnostic helpers above
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isFromControls(e.target)) {
+      return;
+    }
     e.preventDefault();
     handlePointerDown(e.clientX, e.clientY);
   };
@@ -414,6 +427,9 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isFromControls(e.target)) {
+      return;
+    }
     if (e.touches.length === 1) {
       handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
     } else if (e.touches.length === 2) {
@@ -431,7 +447,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       const prevDist = touchRef.current.lastDistance;
       if (prevDist > 0) {
         const scale = newDist / prevDist;
-        const newZoom = Math.min(Math.max(stateRef.current.zoom * scale, minZoom), maxZoom);
+        const newZoom = Math.min(Math.max(stateRef.current.zoom * scale, getMinZoom()), maxZoom);
         applyZoomDirect(newZoom);
       }
       touchRef.current.lastDistance = newDist;

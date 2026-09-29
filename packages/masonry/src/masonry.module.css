@@ -38,8 +38,9 @@
   gap: var(--masonry-gap);
 }
 
+/* 子元素占满列宽，原始宽度小于列宽的图片也不会留出空白 */
 .root[data-variant='masonry'] .item > * {
-  max-width: 100%;
+  width: 100%;
   height: auto;
 }
 
