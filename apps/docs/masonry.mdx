@@ -1,0 +1,35 @@
+import { InstallScript } from './components/InstallScript/InstallScript';
+import * as demos from './demos';
+
+## Installation
+
+<InstallScript packages="@mantyke/masonry" />
+
+## Usage
+
+<Demo data={demos.masonryUsage} />
+
+## Variants
+
+- `masonry` (default): items go to the shortest column
+- `columns`: justified columns, all columns end at the same height
+- `rows`: justified rows, each row fills the container width
+
+<Demo data={demos.masonryConfigurator} />
+
+## Responsive columns and gap
+
+`columns` and `gap` accept Mantine responsive objects:
+
+```tsx
+<Masonry
+  columns={{ base: 1, sm: 2, md: 3 }}
+  gap={{ base: 'sm', md: 'lg' }}
+>
+  {/* items */}
+</Masonry>
+```
+
+## Item state
+
+When a layout change moves an item to another column or row, React re-mounts it, so its internal state is reset (uncontrolled inputs lose their values, videos restart). Keep such state outside the item if it must survive layout changes.

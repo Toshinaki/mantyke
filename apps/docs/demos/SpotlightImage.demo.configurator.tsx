@@ -52,5 +52,6 @@ export const configurator: MantineDemo = {
       step: 0.1,
     },
     { type: 'number', prop: 'maxZoom', initialValue: 5, libraryValue: 5, min: 2, max: 10 },
+    { type: 'boolean', prop: 'keepImageInView', initialValue: false, libraryValue: false },
   ],
 };

@@ -1,11 +1,12 @@
 import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import cx from 'clsx';
 import { AppShell, Container, Group, RemoveScroll, useMantineColorScheme } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
 import { ColorSchemeControl, HeaderControls } from '@mantinex/mantine-header';
-import { MantineLogo } from '@mantinex/mantine-logo';
 import { meta } from '@mantinex/mantine-meta';
-import { PACKAGE_DATA } from '../../data';
+import { PACKAGES, REPOSITORY_URL } from '../../data';
 import classes from './Shell.module.css';
 
 interface ShellProps {
@@ -14,24 +15,32 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   const { toggleColorScheme } = useMantineColorScheme();
+  const router = useRouter();
   useHotkeys([['mod + J', toggleColorScheme]]);
 
   return (
     <AppShell header={{ height: 60 }}>
       <AppShell.Header className={cx(RemoveScroll.classNames.zeroRight, classes.header)}>
         <Container size="lg" px="md" className={classes.inner}>
-          <a
-            href="https://mantine.dev/"
-            target="_blank"
-            className={cx('mantine-focus-auto', classes.logo)}
-            rel="noreferrer"
-          >
-            <MantineLogo size={30} />
-          </a>
+          <Group gap="lg">
+            <Link href="/" className={cx('mantine-focus-auto', classes.brand)}>
+              Mantyke
+            </Link>
+            {PACKAGES.map((pkg) => (
+              <Link
+                key={pkg.slug}
+                href={`/${pkg.slug}`}
+                data-active={router.pathname === `/${pkg.slug}` || undefined}
+                className={cx('mantine-focus-auto', classes.link)}
+              >
+                {pkg.slug}
+              </Link>
+            ))}
+          </Group>
 
           <HeaderControls
             visibleFrom="sm"
-            githubLink={PACKAGE_DATA.repositoryUrl}
+            githubLink={REPOSITORY_URL}
             withDirectionToggle={false}
             withSearch={false}
             withSupport={false}

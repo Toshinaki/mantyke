@@ -272,6 +272,9 @@ importers:
       '@mantinex/mantine-meta':
         specifier: ^2.0.0
         version: 2.0.0
+      '@mantyke/masonry':
+        specifier: workspace:*
+        version: link:../../packages/masonry
       '@mantyke/spotlight-image':
         specifier: workspace:*
         version: link:../../packages/spotlight-image
