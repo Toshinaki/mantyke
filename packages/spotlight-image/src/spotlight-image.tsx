@@ -175,6 +175,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   const [initialZoom, setInitialZoom] = useState(INITIAL_VIEW.initialZoom);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  /** 手指是否在查看区域内，触摸期间关闭位移过渡，让图片直接跟随手指 */
+  const [isTouching, setIsTouching] = useState(false);
   const [isFullscreenHintOpen, setIsFullscreenHintOpen] = useState(false);
   const { start: startFullscreenHintTimer, clear: clearFullscreenHintTimer } = useTimeout(
     () => setIsFullscreenHintOpen(false),
@@ -390,6 +392,35 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     return () => spotlightNode.removeEventListener('wheel', onWheel);
   }, [isOpen, spotlightNode, zoomSpeed]);
 
+  // ── Native gesture blocking ────────────────────────────────────────────────
+
+  /**
+   * 阻止浏览器自身的双指缩放与滚动。否则 iOS Safari 会在组件缩放图片的同时缩放整个页面，
+   * 触点坐标随页面缩放变化，两者相互干扰，图片高速抖动。
+   * React 的触摸事件监听是 passive 的，无法 preventDefault，这里注册原生监听；
+   * gesturestart / gesturechange 是 WebKit 专有的双指手势事件。
+   */
+  useEffect(() => {
+    if (!spotlightNode || !isOpen) {
+      return;
+    }
+
+    const preventNativeGesture = (e: Event) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+    const nativeGestureEvents = ['touchmove', 'gesturestart', 'gesturechange'];
+
+    nativeGestureEvents.forEach((type) =>
+      spotlightNode.addEventListener(type, preventNativeGesture, { passive: false })
+    );
+    return () =>
+      nativeGestureEvents.forEach((type) =>
+        spotlightNode.removeEventListener(type, preventNativeGesture)
+      );
+  }, [isOpen, spotlightNode]);
+
   // ── Resize handling ────────────────────────────────────────────────────────
 
   /**
@@ -578,8 +609,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
 
   /**
    * Touch support — single-finger drag and two-finger pinch-to-zoom.
-   * The CSS `.spotlight` class has `touch-action: none` to prevent the browser's
-   * default touch gestures from interfering.
+   * The CSS `.spotlight` class has `touch-action: none`, and native listeners above
+   * block the browser's own pinch zoom, so the two do not interfere.
    */
   const getTouchDistance = (touches: React.TouchList) => {
     const [a, b] = [touches[0], touches[1]];
@@ -590,6 +621,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     if (isFromControls(e.target)) {
       return;
     }
+    setIsTouching(true);
     if (e.touches.length === 1) {
       handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
     } else if (e.touches.length === 2) {
@@ -618,9 +650,12 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     handlePointerUp();
     touchRef.current.lastDistance = 0;
+    if (e.touches.length === 0) {
+      setIsTouching(false);
+    }
   };
 
   // ── Fullscreen ─────────────────────────────────────────────────────────────
@@ -698,9 +733,11 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           className={clsx(classes.spotlight, {
             [classes.grab]: zoom > initialZoom && !isDragging,
             [classes.grabbing]: zoom > initialZoom && isDragging,
+            [classes.touching]: isTouching,
           })}
         >
           <Group className={clsx(classes.controls, classes.topControls)}>

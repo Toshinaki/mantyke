@@ -59,6 +59,8 @@ const TOUCH_RATIO_TOLERANCE = 0.2;
 const TOUCH_STEPS = 10;
 /** 判定「没有发生变化」前的等待时间，覆盖动画与防抖 */
 const SETTLE_DELAY = 500;
+/** 等待查看器中的图片加载并淡入完成的上限 */
+const IMAGE_LOAD_TIMEOUT = 5000;
 
 const THUMB_SIZE = { width: 120, height: 80 };
 /** 缩略图前后的空白高度，使页面可以滚动 */
@@ -114,10 +116,14 @@ function getThumbnail(fixture: ImageFixture) {
 async function findViewer() {
   const dialog = await screen.findByRole('dialog');
   const image = within(dialog).getByRole('img') as HTMLImageElement;
-  await waitFor(() => {
-    expect(image.naturalWidth).toBeGreaterThan(0);
-    expect(getComputedStyle(image).opacity).toBe('1');
-  });
+  // 超大图片的解码与淡入可能超过默认的 1 秒等待时间
+  await waitFor(
+    () => {
+      expect(image.naturalWidth).toBeGreaterThan(0);
+      expect(getComputedStyle(image).opacity).toBe('1');
+    },
+    { timeout: IMAGE_LOAD_TIMEOUT }
+  );
   await waitForStableRect(image);
   return {
     dialog,

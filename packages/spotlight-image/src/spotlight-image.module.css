@@ -26,6 +26,8 @@ section.modalContent {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  /* 由组件处理拖动与双指缩放，浏览器不再执行自身的平移与缩放 */
+  touch-action: none;
 
   &.grab {
     cursor: grab;
@@ -86,7 +88,8 @@ section.modalContent {
   opacity: 1;
 }
 
-/* 拖动时取消位移过渡，图片直接跟随指针 */
-.grabbing .modalImage {
+/* 拖动或触摸时取消位移过渡，图片直接跟随指针或手指 */
+.grabbing .modalImage,
+.touching .modalImage {
   transition: opacity 0.3s ease;
 }
