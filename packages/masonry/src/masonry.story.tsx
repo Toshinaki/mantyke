@@ -1,27 +1,42 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import { fixtureSrc, MASONRY_FIXTURES, type ImageFixture } from '../../../.storybook/fixtures';
 import { Masonry, MasonryProps } from './masonry';
 
-const photos = [
-  { src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800', w: 800, h: 533 },
-  { src: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800', w: 800, h: 533 },
-  { src: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800', w: 800, h: 533 },
-  { src: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800', w: 800, h: 1200 },
-  { src: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800', w: 800, h: 1067 },
-  { src: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800', w: 800, h: 450 },
-  { src: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800', w: 800, h: 533 },
-  { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800', w: 800, h: 533 },
-  { src: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800', w: 800, h: 1200 },
-  { src: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800', w: 800, h: 533 },
-];
-
-function Photo({ src, w, h }: { src: string; w: number; h: number }) {
-  return <img src={src} alt="" width={w} height={h} style={{ display: 'block' }} />;
+interface PlaygroundArgs extends Omit<MasonryProps, 'children'> {
+  /** 显示的图片数量，图片的宽高比各不相同 */
+  itemCount: number;
 }
 
-const meta: Meta<MasonryProps> = {
+interface PhotoProps {
+  fixture: ImageFixture;
+}
+
+function Photo({ fixture }: PhotoProps) {
+  return (
+    <img
+      src={fixtureSrc(fixture)}
+      alt={fixture.name}
+      width={fixture.width}
+      height={fixture.height}
+      style={{ display: 'block' }}
+    />
+  );
+}
+
+function Playground({ itemCount, ...props }: PlaygroundArgs) {
+  return (
+    <Masonry {...props}>
+      {MASONRY_FIXTURES.slice(0, itemCount).map((fixture) => (
+        <Photo key={fixture.name} fixture={fixture} />
+      ))}
+    </Masonry>
+  );
+}
+
+const meta: Meta<PlaygroundArgs> = {
   title: 'Masonry',
-  component: Masonry,
+  component: Playground,
   argTypes: {
     variant: {
       control: 'select',
@@ -47,12 +62,17 @@ const meta: Meta<MasonryProps> = {
       description: 'Gap between items',
       table: { defaultValue: { summary: 'md' } },
     },
+    itemCount: {
+      control: { type: 'range', min: 1, max: MASONRY_FIXTURES.length, step: 1 },
+      description: 'Number of images',
+    },
   },
   args: {
     variant: 'masonry',
     columns: 3,
     rows: 2,
     gap: 'md',
+    itemCount: MASONRY_FIXTURES.length,
   },
   decorators: [
     (Story) => (
@@ -64,66 +84,28 @@ const meta: Meta<MasonryProps> = {
 };
 
 export default meta;
-type Story = StoryObj<MasonryProps>;
+type Story = StoryObj<PlaygroundArgs>;
 
-export const Playground: Story = {
-  render: (args) => (
-    <Masonry {...args}>
-      {photos.map((photo, i) => (
-        <Photo key={i} {...photo} />
-      ))}
-    </Masonry>
-  ),
+export const MasonryVariant: Story = {
+  args: { variant: 'masonry' },
 };
 
 export const ColumnsVariant: Story = {
-  args: { variant: 'columns', columns: 3, gap: 'md' },
-  render: (args) => (
-    <Masonry {...args}>
-      {photos.map((photo, i) => (
-        <Photo key={i} {...photo} />
-      ))}
-    </Masonry>
-  ),
+  args: { variant: 'columns' },
 };
 
 export const RowsVariant: Story = {
-  args: { variant: 'rows', rows: 2, gap: 'md' },
-  render: (args) => (
-    <Masonry {...args}>
-      {photos.map((photo, i) => (
-        <Photo key={i} {...photo} />
-      ))}
-    </Masonry>
-  ),
-};
-
-export const MasonryVariant: Story = {
-  args: { variant: 'masonry', columns: 3, gap: 'md' },
-  render: (args) => (
-    <Masonry {...args}>
-      {photos.map((photo, i) => (
-        <Photo key={i} {...photo} />
-      ))}
-    </Masonry>
-  ),
+  args: { variant: 'rows' },
 };
 
 export const ResponsiveColumns: Story = {
   args: {
     variant: 'masonry',
-    columns: { base: 1, sm: 2, md: 3, lg: 4 } as any,
-    gap: { base: 'sm', md: 'md', lg: 'lg' } as any,
+    columns: { base: 1, sm: 2, md: 3, lg: 4 },
+    gap: { base: 'sm', md: 'md', lg: 'lg' },
   },
   argTypes: {
     columns: { control: false },
     gap: { control: false },
   },
-  render: (args) => (
-    <Masonry {...args}>
-      {photos.map((photo, i) => (
-        <Photo key={i} {...photo} />
-      ))}
-    </Masonry>
-  ),
 };
