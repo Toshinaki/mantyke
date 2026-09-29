@@ -76,10 +76,13 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release --provenance --access public
+          # changeset publish 不接受额外参数（2.31 起会直接报错）。
+          # 公开访问由各包 package.json 的 publishConfig.access 指定，来源证明通过下方环境变量开启。
+          publish: pnpm release
           commit: 'chore: release packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Create GitHub Releases
         if: steps.changesets.outputs.published == 'true'
