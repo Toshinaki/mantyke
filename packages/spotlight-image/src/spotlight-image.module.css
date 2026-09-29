@@ -56,7 +56,7 @@ section.modalContent {
 }
 
 .controlButton {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgb(0, 0, 0, 0.5);
   color: white;
 }
 
@@ -84,4 +84,9 @@ section.modalContent {
 
 .imageLoaded {
   opacity: 1;
+}
+
+/* 拖动时取消位移过渡，图片直接跟随指针 */
+.grabbing .modalImage {
+  transition: opacity 0.3s ease;
 }
