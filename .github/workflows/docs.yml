@@ -56,7 +56,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm nx run-many -t build --exclude=mantyke-docs
+        # 各包的 build target 都执行根目录的 pnpm run build（构建全部包），并行运行会争用 temp/ 目录
+        run: pnpm run build
 
       - name: Build docs
         run: pnpm docs:build
