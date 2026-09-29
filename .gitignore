@@ -155,3 +155,4 @@ apps/docs/docgen.json
 storybook-static
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+.vitest
