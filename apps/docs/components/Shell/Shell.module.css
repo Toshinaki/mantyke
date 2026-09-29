@@ -14,8 +14,23 @@
   padding-bottom: 120px;
 }
 
-.logo {
-  & > svg {
-    display: block;
+.brand {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 700;
+  color: var(--mantine-color-bright);
+  text-decoration: none;
+}
+
+.link {
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  text-decoration: none;
+
+  @mixin hover {
+    color: var(--mantine-color-bright);
+  }
+
+  &[data-active] {
+    color: var(--mantine-primary-color-filled);
   }
 }

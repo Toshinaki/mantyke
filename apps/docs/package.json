@@ -17,6 +17,7 @@
     "@mantinex/mantine-header": "^2.0.0",
     "@mantinex/mantine-logo": "^2.0.0",
     "@mantinex/mantine-meta": "^2.0.0",
+    "@mantyke/masonry": "workspace:*",
     "@mantyke/spotlight-image": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",

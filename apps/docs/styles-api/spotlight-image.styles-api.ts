@@ -9,6 +9,4 @@ export const SpotlightImageStylesApi: StylesApiData<SpotlightImageFactory> = {
   vars: {
     root: {},
   },
-
-  modifiers: [{ modifier: 'data-centered', selector: 'root', condition: '`centered` prop is set' }],
 };
