@@ -73,11 +73,8 @@ const LABELS = {
   exitFullscreen: 'Exit fullscreen',
 } as const;
 
-/**
- * 「限制拖动范围」配置（SI-54a）尚未实现，名称为暂定。
- * 实现后改为直接传入 prop，并删除这里的类型断言。
- */
-const KEEP_IN_VIEW_PROPS = { keepImageInView: true } as unknown as Partial<SpotlightImageProps>;
+/** 「限制拖动范围」配置（SI-54a） */
+const KEEP_IN_VIEW_PROPS: Partial<SpotlightImageProps> = { keepImageInView: true };
 
 interface SceneProps {
   fixtures: ImageFixture[];
@@ -1042,7 +1039,10 @@ export const SI75: Story = {
     expect(isDisabled, '全屏按钮显示为不可用').toBe(true);
 
     await click(button, { force: true });
-    expect(await screen.findByRole('tooltip'), '点击后出现提示').toBeVisible();
+    const tooltip = await screen.findByRole('tooltip');
+    // 提示有淡入动画，等待动画结束后再判断
+    await waitFor(() => expect(tooltip, '点击后出现提示').toBeVisible());
+    expect(tooltip.textContent, '提示有说明文字').not.toBe('');
 
     const before = await viewer.rect();
     const after = await clickButton(viewer, LABELS.zoomIn);

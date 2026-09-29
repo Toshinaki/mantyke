@@ -99,8 +99,9 @@ Extends `ImageProps` from `@mantine/core`.
 | `fit`        | `'contain' \| 'cover' \| 'fill' \| 'scale-down' \| 'none'` | `'cover'`    | Image fit behavior            |
 | `zoomSpeed`  | `number`                                                   | `1.2`        | Zoom multiplier per step      |
 | `maxZoom`    | `number`                                                   | `5`          | Maximum zoom level            |
-| `minZoom`    | `number`                                                   | `0.25`       | Minimum zoom level            |
-| `modalProps` | `Omit<ModalProps, 'opened' \| 'onClose' \| 'fullScreen' \| 'withCloseButton'>` | `{}`         | Props passed to Mantine Modal |
+| `minZoom`    | `number`                                                   | `0.25`       | Minimum zoom level. If the fit-to-screen zoom is lower, it is used instead |
+| `keepImageInView` | `boolean`                                             | `false`      | Stop the zoomed image from being dragged out of view |
+| `modalProps` | `Omit<ModalProps, 'opened' \| 'onClose' \| 'fullScreen' \| 'withCloseButton'>` | `{}`         | Props passed to Mantine Modal. Set `closeOnClickOutside: true` to close when the area around the image is clicked |
 | `width`      | `number \| string`                                         | -            | Image width                   |
 | `height`     | `number \| string`                                         | -            | Image height                  |
 | `radius`     | `MantineRadius`                                            | -            | Border radius                 |
@@ -116,8 +117,10 @@ Extends `ImageProps` from `@mantine/core`.
 ### Mouse
 
 - **Click image** - Open spotlight view
-- **Mouse wheel** - Zoom in/out
+- **Mouse wheel** - Zoom in/out around the pointer
+- **Trackpad pinch** - Zoom in/out smoothly
 - **Click & drag** - Pan when zoomed
+- **Click outside the image** - Close spotlight (when `modalProps.closeOnClickOutside` is enabled)
 
 ### Touch
 
@@ -130,7 +133,7 @@ Extends `ImageProps` from `@mantine/core`.
 - **Zoom In** - Increase zoom level
 - **Zoom Out** - Decrease zoom level
 - **Reset** - Return to fit-to-screen
-- **Fullscreen** - Toggle fullscreen mode
+- **Fullscreen** - Toggle fullscreen mode. Shown as disabled on devices without the Fullscreen API (such as iPhone Safari)
 - **Close** - Close spotlight
 
 ### Keyboard

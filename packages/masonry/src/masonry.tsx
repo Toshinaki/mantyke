@@ -20,6 +20,7 @@ import {
   type StyleProp,
   type StylesApiProps,
 } from '@mantine/core';
+import { useIsomorphicEffect } from '@mantine/hooks';
 import classes from './masonry.module.css';
 
 export type MasonryStylesNames = 'root' | 'column' | 'item';
@@ -499,6 +500,26 @@ const MasonryVariant = React.forwardRef<HTMLDivElement, VariantProps>(
       }
     }, []);
 
+    /**
+     * 绘制前同步读取各项高度。首次渲染时高度未知，所有项会先落在第一列；
+     * 在绘制前完成测量并重新分配，用户看到的第一帧就是正确的布局。
+     * 与下方 ResizeObserver 使用同一种测量方式，避免两者数值不一致导致反复重排。
+     */
+    useIsomorphicEffect(() => {
+      setHeights((prev) => {
+        let next: Map<string, number> | null = null;
+        itemRefs.current.forEach((node, key) => {
+          const h = node.getBoundingClientRect().height;
+          if (prev.get(key) !== h) {
+            next = next ?? new Map(prev);
+            next.set(key, h);
+          }
+        });
+        return next ?? prev;
+      });
+    });
+
+    // 内容加载完成等后续尺寸变化
     useEffect(() => {
       const observer = new ResizeObserver((entries) => {
         setHeights((prev) => {
@@ -507,7 +528,7 @@ const MasonryVariant = React.forwardRef<HTMLDivElement, VariantProps>(
           for (const entry of entries) {
             const key = (entry.target as HTMLDivElement).dataset.masonryKey;
             if (key !== undefined) {
-              const h = entry.contentRect.height;
+              const h = entry.target.getBoundingClientRect().height;
               if (next.get(key) !== h) {
                 next.set(key, h);
                 changed = true;

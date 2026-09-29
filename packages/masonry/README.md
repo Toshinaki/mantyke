@@ -122,6 +122,10 @@ Justified variable-width columns. Items are distributed into columns based on a 
 
 Justified row packing. Items are distributed into rows that each fill the full container width. Row heights vary, but all items within the same row share the same height. Item widths scale proportionally by aspect ratio.
 
+### Item State
+
+Items are rendered inside column (or row) elements. When a layout change moves an item to another column or row (for example, after items are added or an item's height changes), React re-mounts it, so its internal state is reset: uncontrolled form inputs lose their values and videos restart. If that state must survive layout changes, keep it outside the item, for example with controlled inputs.
+
 ## Styles API
 
 ### Selectors

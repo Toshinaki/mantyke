@@ -14,6 +14,7 @@ import {
   Group,
   Image,
   Modal,
+  Tooltip,
   useProps,
   useStyles,
   type ActionIconProps,
@@ -23,7 +24,7 @@ import {
   type ModalProps,
   type StylesApiProps,
 } from '@mantine/core';
-import { useFullscreen } from '@mantine/hooks';
+import { useFullscreen, useTimeout } from '@mantine/hooks';
 import classes from './spotlight-image.module.css';
 
 export type SpotlightImageStylesNames = 'root';
@@ -46,7 +47,10 @@ export interface SpotlightImageProps
   /** Minimum zoom level, 0.25 by default. If the fit-to-screen zoom is lower, it is used as the minimum instead */
   minZoom?: number;
 
-  /** Modal props for spotlight overlay */
+  /** Keep the zoomed image covering the viewport while dragging, so it cannot be dragged out of view, `false` by default */
+  keepImageInView?: boolean;
+
+  /** Modal props for spotlight overlay. Set `closeOnClickOutside` to close the spotlight when the empty area around the image is clicked (`false` by default) */
   modalProps?: Omit<ModalProps, 'opened' | 'onClose' | 'fullScreen' | 'withCloseButton'>;
 }
 
@@ -62,7 +66,72 @@ const defaultProps: Partial<SpotlightImageProps> = {
   zoomSpeed: 1.2,
   maxZoom: 5,
   minZoom: 0.25,
+  keepImageInView: false,
 };
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface ViewState {
+  zoom: number;
+  initialZoom: number;
+  position: Point;
+}
+
+const INITIAL_VIEW: ViewState = { zoom: 1, initialZoom: 1, position: { x: 0, y: 0 } };
+
+/** 适配屏幕时图片四周保留的留白（两侧合计） */
+const FIT_PADDING = 80;
+/** 鼠标滚轮滚动一格的 deltaY（像素模式）。滚动一格等同于点击一次放大或缩小按钮 */
+const WHEEL_NOTCH_PX = 100;
+/** Firefox 以「行」为单位上报滚轮，一格为 3 行 */
+const WHEEL_LINE_PX = WHEEL_NOTCH_PX / 3;
+/**
+ * 触控板捏合（浏览器以带 ctrlKey 的 wheel 事件上报）的灵敏度。
+ * 缩放倍数为 e^(-deltaY × 灵敏度)，使缩放幅度与手指动作成比例。
+ */
+const PINCH_SENSITIVITY = 0.01;
+/** 按下与点击之间移动超过该距离时视为拖动，不触发「点击空白处关闭」 */
+const CLICK_MOVE_TOLERANCE = 5;
+/** 不支持全屏时，点击按钮后提示的显示时长 */
+const FULLSCREEN_HINT_DURATION = 2000;
+const FULLSCREEN_UNSUPPORTED_LABEL = 'Fullscreen is not supported on this device';
+
+/**
+ * Calculate the initial zoom level to fit image within viewport
+ * Ensures large images are scaled down while small images aren't upscaled
+ */
+function calculateInitialZoom(img: HTMLImageElement) {
+  const availableWidth = window.innerWidth - FIT_PADDING;
+  const availableHeight = window.innerHeight - FIT_PADDING;
+  const scaleX = availableWidth / img.naturalWidth;
+  const scaleY = availableHeight / img.naturalHeight;
+  // Use the smaller scale to ensure image fits entirely
+  // Don't upscale images smaller than screen
+  return Math.min(scaleX, scaleY, 1);
+}
+
+/** 把不同 deltaMode 的滚轮距离统一换算为像素 */
+function getWheelDeltaPx(e: WheelEvent) {
+  if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+    return e.deltaY * WHEEL_LINE_PX;
+  }
+  if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+    return e.deltaY * window.innerHeight;
+  }
+  return e.deltaY;
+}
+
+/** iPhone Safari 等浏览器不支持对普通元素调用全屏 API */
+function isFullscreenSupported() {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+  const doc = document as Document & { webkitFullscreenEnabled?: boolean };
+  return Boolean(doc.fullscreenEnabled ?? doc.webkitFullscreenEnabled);
+}
 
 export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   const props = useProps('SpotlightImage', defaultProps, _props);
@@ -80,9 +149,11 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     zoomSpeed = 1.2,
     maxZoom = 5,
     minZoom = 0.25,
+    keepImageInView = false,
     modalProps,
     ...others
   } = props;
+  const { closeOnClickOutside = false, ...restModalProps } = modalProps ?? {};
 
   const getStyles = useStyles<SpotlightImageFactory>({
     name: 'SpotlightImage',
@@ -99,11 +170,16 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [isOpen, setIsOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [initialZoom, setInitialZoom] = useState(1);
+  const [zoom, setZoom] = useState(INITIAL_VIEW.zoom);
+  const [position, setPosition] = useState(INITIAL_VIEW.position);
+  const [initialZoom, setInitialZoom] = useState(INITIAL_VIEW.initialZoom);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFullscreenHintOpen, setIsFullscreenHintOpen] = useState(false);
+  const { start: startFullscreenHintTimer, clear: clearFullscreenHintTimer } = useTimeout(
+    () => setIsFullscreenHintOpen(false),
+    FULLSCREEN_HINT_DURATION
+  );
 
   // ── Refs ───────────────────────────────────────────────────────────────────
 
@@ -128,13 +204,14 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   const imageTransformRef = useRef<HTMLImageElement>(null);
   /** Tracks distance between two touch points for pinch-to-zoom */
   const touchRef = useRef({ lastDistance: 0 });
+  /** 最近一次按下的位置，用于区分点击与拖动 */
+  const pressRef = useRef<Point | null>(null);
   /**
-   * Mirror the latest state values into a ref so that callbacks registered in
-   * `useEffect` (wheel, keyboard) always read fresh values without needing those
-   * values in the dependency array (which would cause listener churn).
+   * 交互过程中的缩放与位置以 ref 为准：滚轮、拖动等高频操作直接修改 ref 和 DOM，
+   * 再通过 `setView` 或防抖同步到 React state。不在每次渲染时用 state 覆盖 ref，
+   * 否则防抖期间发生的重新渲染会把 ref 改回旧值。
    */
-  const stateRef = useRef({ zoom: 1, initialZoom: 1, position: { x: 0, y: 0 } });
-  stateRef.current = { zoom, initialZoom, position };
+  const stateRef = useRef<ViewState>({ ...INITIAL_VIEW });
   /** Timer ID for debounced sync of stateRef back to React state after zoom */
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Destructure `ref` from `useFullscreen` so we can attach it to the
@@ -157,31 +234,26 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     [fullscreenRef]
   );
 
-  // ── Zoom helpers ───────────────────────────────────────────────────────────
+  // ── View state helpers ─────────────────────────────────────────────────────
 
-  /**
-   * Calculate the initial zoom level to fit image within viewport
-   * Ensures large images are scaled down while small images aren't upscaled
-   */
-  const calculateInitialZoom = (img: HTMLImageElement) => {
-    const padding = 80;
-    const availableWidth = window.innerWidth - padding;
-    const availableHeight = window.innerHeight - padding;
-    const scaleX = availableWidth / img.naturalWidth;
-    const scaleY = availableHeight / img.naturalHeight;
-    // Use the smaller scale to ensure image fits entirely
-    // Don't upscale images smaller than screen
-    return Math.min(scaleX, scaleY, 1);
-  };
+  const cancelPendingSync = useCallback(() => {
+    if (syncTimerRef.current !== null) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+  }, []);
 
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    // Prefer `currentTarget` over `target` — guaranteed to be the element the handler is on
-    const img = e.currentTarget;
-    const newInitialZoom = calculateInitialZoom(img);
-    setInitialZoom(newInitialZoom);
-    setZoom(newInitialZoom);
-    setIsImageLoaded(true);
-  };
+  /** 立即更新 ref 与 React state，并取消尚未执行的防抖同步 */
+  const setView = useCallback(
+    (next: Partial<ViewState>) => {
+      Object.assign(stateRef.current, next);
+      cancelPendingSync();
+      setZoom(stateRef.current.zoom);
+      setInitialZoom(stateRef.current.initialZoom);
+      setPosition(stateRef.current.position);
+    },
+    [cancelPendingSync]
+  );
 
   /**
    * Flush stateRef values back to React state after zoom interaction settles.
@@ -189,53 +261,102 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
    * produce only a single React re-render once the user pauses.
    */
   const syncStateFromRef = useCallback(() => {
-    if (syncTimerRef.current !== null) {
-      clearTimeout(syncTimerRef.current);
-    }
+    cancelPendingSync();
     syncTimerRef.current = setTimeout(() => {
       syncTimerRef.current = null;
       const { zoom: z, position: pos } = stateRef.current;
       setZoom(z);
       setPosition({ x: pos.x, y: pos.y });
     }, 150);
-  }, []);
+  }, [cancelPendingSync]);
 
   /**
-   * Apply a zoom change directly to the DOM, then debounce a React state sync.
+   * Directly mutate the image's CSS transform during drag for smooth
+   * movement, bypassing React's reconciliation. State is synced on pointer-up.
    */
-  const applyZoomDirect = useCallback(
-    (newZoom: number) => {
-      stateRef.current.zoom = newZoom;
-      updateTransform(stateRef.current.position.x, stateRef.current.position.y, newZoom);
-      syncStateFromRef();
-    },
-    [syncStateFromRef]
-  );
+  const updateTransform = (x: number, y: number, z: number) => {
+    const el = imageTransformRef.current;
+    if (el) {
+      el.style.transform = `scale(${z}) translate(${x / z}px, ${y / z}px)`;
+    }
+  };
 
-  const handleZoomIn = useCallback(() => {
-    const newZoom = Math.min(stateRef.current.zoom * zoomSpeed, maxZoom);
-    applyZoomDirect(newZoom);
-  }, [maxZoom, zoomSpeed, applyZoomDirect]);
+  /**
+   * 开启 `keepImageInView` 时限制平移范围：图片比可视区域大的方向上，边缘不能移进可视区域；
+   * 图片比可视区域小的方向上保持居中。
+   */
+  const constrainPosition = (pos: Point, z: number): Point => {
+    const img = imageTransformRef.current;
+    if (!keepImageInView || !img || !spotlightNode) {
+      return pos;
+    }
+    const bounds = spotlightNode.getBoundingClientRect();
+    const maxX = Math.max(0, (img.naturalWidth * z - bounds.width) / 2);
+    const maxY = Math.max(0, (img.naturalHeight * z - bounds.height) / 2);
+    return {
+      x: Math.min(Math.max(pos.x, -maxX), maxX),
+      y: Math.min(Math.max(pos.y, -maxY), maxY),
+    };
+  };
+
+  /** 视口坐标相对于查看区域中心的偏移 */
+  const getOffsetFromCenter = (clientX: number, clientY: number): Point => {
+    if (!spotlightNode) {
+      return { x: 0, y: 0 };
+    }
+    const bounds = spotlightNode.getBoundingClientRect();
+    return {
+      x: clientX - (bounds.left + bounds.width / 2),
+      y: clientY - (bounds.top + bounds.height / 2),
+    };
+  };
+
+  // ── Zoom helpers ───────────────────────────────────────────────────────────
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Prefer `currentTarget` over `target` — guaranteed to be the element the handler is on
+    const fitZoom = calculateInitialZoom(e.currentTarget);
+    setView({ initialZoom: fitZoom, zoom: fitZoom, position: { x: 0, y: 0 } });
+    setIsImageLoaded(true);
+  };
 
   /**
    * 缩小的下限。图片打开时的适配缩放可能已经低于 `minZoom`（大图、窄屏），
    * 此时以适配缩放为下限，保证缩小操作不会反而把图片放大。
    */
-  const getMinZoom = useCallback(() => Math.min(minZoom, stateRef.current.initialZoom), [minZoom]);
+  const getMinZoom = () => Math.min(minZoom, stateRef.current.initialZoom);
 
-  const handleZoomOut = useCallback(() => {
-    const newZoom = Math.max(stateRef.current.zoom / zoomSpeed, getMinZoom());
-    // Reset position when zooming back to fit-to-screen level
-    if (newZoom <= stateRef.current.initialZoom) {
-      stateRef.current.position = { x: 0, y: 0 };
-    }
-    applyZoomDirect(newZoom);
-  }, [zoomSpeed, getMinZoom, applyZoomDirect]);
+  /**
+   * 缩放到 targetZoom，并保持 anchor（相对查看区域中心的偏移）下方的图片内容不动。
+   * 不传 anchor 时以查看区域中心为缩放中心。缩小到适配大小或更小时图片回到中间。
+   */
+  const zoomTo = (targetZoom: number, anchor: Point = { x: 0, y: 0 }) => {
+    const { zoom: currentZoom, initialZoom: fitZoom, position: pos } = stateRef.current;
+    const newZoom = Math.min(Math.max(targetZoom, getMinZoom()), maxZoom);
+    const ratio = newZoom / currentZoom;
+    const nextPosition =
+      newZoom <= fitZoom
+        ? { x: 0, y: 0 }
+        : {
+            x: anchor.x * (1 - ratio) + pos.x * ratio,
+            y: anchor.y * (1 - ratio) + pos.y * ratio,
+          };
+    stateRef.current.zoom = newZoom;
+    stateRef.current.position = constrainPosition(nextPosition, newZoom);
+    updateTransform(stateRef.current.position.x, stateRef.current.position.y, newZoom);
+    syncStateFromRef();
+  };
 
-  const handleZoomReset = useCallback(() => {
-    stateRef.current.position = { x: 0, y: 0 };
-    applyZoomDirect(stateRef.current.initialZoom);
-  }, [applyZoomDirect]);
+  const handleZoomIn = () => zoomTo(stateRef.current.zoom * zoomSpeed);
+  const handleZoomOut = () => zoomTo(stateRef.current.zoom / zoomSpeed);
+  const handleZoomReset = () => zoomTo(stateRef.current.initialZoom);
+
+  /**
+   * 事件监听只在打开或关闭时注册一次，回调通过 ref 取到最新的处理函数，
+   * 避免因处理函数每次渲染都重新创建而反复解绑与绑定监听。
+   */
+  const handlersRef = useRef({ zoomTo, handleZoomIn, handleZoomOut, handleZoomReset });
+  handlersRef.current = { zoomTo, handleZoomIn, handleZoomOut, handleZoomReset };
 
   // ── Wheel handling ─────────────────────────────────────────────────────────
 
@@ -253,23 +374,57 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (e.deltaY < 0) {
-        handleZoomIn();
-      } else {
-        handleZoomOut();
-      }
+      const deltaPx = getWheelDeltaPx(e);
+      // 缩放倍数与滚动距离成比例：鼠标滚轮一格对应一次 zoomSpeed，触控板捏合按手指动作缩放
+      const factor = e.ctrlKey
+        ? Math.exp(-deltaPx * PINCH_SENSITIVITY)
+        : zoomSpeed ** (-deltaPx / WHEEL_NOTCH_PX);
+      const bounds = spotlightNode.getBoundingClientRect();
+      handlersRef.current.zoomTo(stateRef.current.zoom * factor, {
+        x: e.clientX - (bounds.left + bounds.width / 2),
+        y: e.clientY - (bounds.top + bounds.height / 2),
+      });
     };
 
     spotlightNode.addEventListener('wheel', onWheel, { passive: false });
     return () => spotlightNode.removeEventListener('wheel', onWheel);
-  }, [handleZoomIn, handleZoomOut, isOpen, spotlightNode]);
+  }, [isOpen, spotlightNode, zoomSpeed]);
+
+  // ── Resize handling ────────────────────────────────────────────────────────
+
+  /**
+   * 窗口尺寸变化（包括进入或退出全屏、旋转手机）时重新计算适配缩放。
+   * 未放大时图片跟随重新适配；已放大时保留当前缩放，只更新下限与重置目标。
+   */
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const onResize = () => {
+      const img = imageTransformRef.current;
+      if (!img || !img.naturalWidth) {
+        return;
+      }
+      const fitZoom = calculateInitialZoom(img);
+      const isZoomedIn = stateRef.current.zoom > stateRef.current.initialZoom;
+      setView(
+        isZoomedIn
+          ? { initialZoom: fitZoom }
+          : { initialZoom: fitZoom, zoom: fitZoom, position: { x: 0, y: 0 } }
+      );
+    };
+
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [isOpen, setView]);
 
   // ── Open / Close ───────────────────────────────────────────────────────────
 
   const openSpotlight = () => {
     setIsOpen(true);
     setIsImageLoaded(false);
-    setPosition({ x: 0, y: 0 });
+    setView({ position: { x: 0, y: 0 } });
   };
 
   /** Click handler for the thumbnail image */
@@ -293,15 +448,9 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   };
 
   const handleClose = () => {
-    if (syncTimerRef.current !== null) {
-      clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = null;
-    }
     setIsOpen(false);
-    setZoom(1);
-    setInitialZoom(1);
+    setView({ ...INITIAL_VIEW, position: { x: 0, y: 0 } });
     setIsImageLoaded(false);
-    setPosition({ x: 0, y: 0 });
   };
 
   // ── Modal keyboard shortcuts ───────────────────────────────────────────────
@@ -326,30 +475,19 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       }
 
       if (e.key === '+' || e.key === '=') {
-        handleZoomIn();
+        handlersRef.current.handleZoomIn();
       } else if (e.key === '-') {
-        handleZoomOut();
+        handlersRef.current.handleZoomOut();
       } else if (e.key === '0') {
-        handleZoomReset();
+        handlersRef.current.handleZoomReset();
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, handleZoomIn, handleZoomOut, handleZoomReset]);
+  }, [isOpen]);
 
   // ── Drag / Pan ─────────────────────────────────────────────────────────────
-
-  /**
-   * Directly mutate the image's CSS transform during drag for smooth
-   * movement, bypassing React's reconciliation. State is synced on pointer-up.
-   */
-  const updateTransform = (x: number, y: number, z: number) => {
-    const el = imageTransformRef.current;
-    if (el) {
-      el.style.transform = `scale(${z}) translate(${x / z}px, ${y / z}px)`;
-    }
-  };
 
   /**
    * Start drag interaction
@@ -375,12 +513,14 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     if (!drag.isDragging) {
       return;
     }
-    const newX = x - drag.startX;
-    const newY = y - drag.startY;
-    drag.posX = newX;
-    drag.posY = newY;
+    const next = constrainPosition(
+      { x: x - drag.startX, y: y - drag.startY },
+      stateRef.current.zoom
+    );
+    drag.posX = next.x;
+    drag.posY = next.y;
     // Update DOM directly for performance (#9)
-    updateTransform(newX, newY, stateRef.current.zoom);
+    updateTransform(next.x, next.y, stateRef.current.zoom);
   };
 
   /** End drag — sync final position back to React state */
@@ -389,7 +529,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     if (drag.isDragging) {
       drag.isDragging = false;
       // Sync final position to state
-      setPosition({ x: drag.posX, y: drag.posY });
+      setView({ position: { x: drag.posX, y: drag.posY } });
       setIsDragging(false);
     }
   };
@@ -404,6 +544,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       return;
     }
     e.preventDefault();
+    pressRef.current = { x: e.clientX, y: e.clientY };
     handlePointerDown(e.clientX, e.clientY);
   };
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -413,6 +554,25 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     }
   };
   const handleMouseUp = () => handlePointerUp();
+
+  /** 开启 `closeOnClickOutside` 时，点击图片以外的区域关闭查看器；拖动后松开不算点击 */
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    const press = pressRef.current;
+    const img = imageTransformRef.current;
+    if (!closeOnClickOutside || !press || !img || isFromControls(e.target)) {
+      return;
+    }
+    const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+    const bounds = img.getBoundingClientRect();
+    const isOnImage =
+      e.clientX >= bounds.left &&
+      e.clientX <= bounds.right &&
+      e.clientY >= bounds.top &&
+      e.clientY <= bounds.bottom;
+    if (moved <= CLICK_MOVE_TOLERANCE && !isOnImage) {
+      handleClose();
+    }
+  };
 
   // ── Touch events ───────────────────────────────────────────────────────────
 
@@ -446,9 +606,13 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       const newDist = getTouchDistance(e.touches);
       const prevDist = touchRef.current.lastDistance;
       if (prevDist > 0) {
-        const scale = newDist / prevDist;
-        const newZoom = Math.min(Math.max(stateRef.current.zoom * scale, getMinZoom()), maxZoom);
-        applyZoomDirect(newZoom);
+        const [a, b] = [e.touches[0], e.touches[1]];
+        // 以两指中点为缩放中心
+        const anchor = getOffsetFromCenter(
+          (a.clientX + b.clientX) / 2,
+          (a.clientY + b.clientY) / 2
+        );
+        zoomTo(stateRef.current.zoom * (newDist / prevDist), anchor);
       }
       touchRef.current.lastDistance = newDist;
     }
@@ -458,6 +622,34 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     handlePointerUp();
     touchRef.current.lastDistance = 0;
   };
+
+  // ── Fullscreen ─────────────────────────────────────────────────────────────
+
+  const handleUnsupportedFullscreenClick = () => {
+    clearFullscreenHintTimer();
+    setIsFullscreenHintOpen(true);
+    startFullscreenHintTimer();
+  };
+
+  const fullscreenButton = isFullscreenSupported() ? (
+    <ControlButton
+      onClick={() => toggleFullscreen()}
+      aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+    >
+      {fullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
+    </ControlButton>
+  ) : (
+    <Tooltip label={FULLSCREEN_UNSUPPORTED_LABEL} opened={isFullscreenHintOpen} position="bottom">
+      <ControlButton
+        data-disabled
+        aria-disabled
+        onClick={handleUnsupportedFullscreenClick}
+        aria-label="Enter fullscreen"
+      >
+        <IconMaximize size={18} />
+      </ControlButton>
+    </Tooltip>
+  );
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -477,7 +669,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
       />
 
       <Modal
-        {...modalProps}
+        {...restModalProps}
         opened={isOpen}
         onClose={handleClose}
         fullScreen
@@ -485,22 +677,24 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
         overlayProps={{
           opacity: 0.9,
           blur: 2,
-          ...modalProps?.overlayProps,
+          ...restModalProps.overlayProps,
         }}
         padding={0}
         classNames={{
-          ...modalProps?.classNames,
-          root: clsx(classes.modalRoot, modalProps?.classNames?.root),
-          content: clsx(classes.modalContent, modalProps?.classNames?.content),
-          body: clsx(classes.modalBody, modalProps?.classNames?.body),
+          ...restModalProps.classNames,
+          root: clsx(classes.modalRoot, restModalProps.classNames?.root),
+          content: clsx(classes.modalContent, restModalProps.classNames?.content),
+          body: clsx(classes.modalBody, restModalProps.classNames?.body),
         }}
       >
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- 点击空白处关闭只是鼠标与触屏的快捷方式，键盘用户通过 Esc 或关闭按钮关闭查看器 */}
         <div
           ref={combinedSpotlightRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onClick={handleBackdropClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -510,12 +704,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
           })}
         >
           <Group className={clsx(classes.controls, classes.topControls)}>
-            <ControlButton
-              onClick={() => toggleFullscreen()}
-              aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              {fullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
-            </ControlButton>
+            {fullscreenButton}
             <CloseButton
               size="lg"
               variant="filled"
@@ -525,7 +714,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
             />
           </Group>
 
-          <Group className={`${classes.controls} ${classes.bottomControls}`}>
+          <Group className={clsx(classes.controls, classes.bottomControls)}>
             <ControlButton onClick={handleZoomOut} aria-label="Zoom out">
               <IconZoomOut size={18} />
             </ControlButton>
@@ -563,11 +752,17 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
 SpotlightImage.displayName = 'SpotlightImage';
 SpotlightImage.classes = classes;
 
-const ControlButton = (props: ElementProps<'button', keyof ActionIconProps> & ActionIconProps) => (
+type ControlButtonProps = ElementProps<'button', keyof ActionIconProps> & ActionIconProps;
+
+// 需要转发 ref：不支持全屏时按钮被 Tooltip 包裹，Tooltip 依赖子元素的 ref 定位
+const ControlButton = React.forwardRef<HTMLButtonElement, ControlButtonProps>((props, ref) => (
   <ActionIcon
+    ref={ref}
     size="lg"
     variant="filled"
     {...props}
     className={clsx(classes.controlButton, props.className)}
   />
-);
+));
+
+ControlButton.displayName = 'ControlButton';
