@@ -55,7 +55,7 @@
 
 ### 环境要求
 
-- **Node.js** 20+
+- **Node.js** 22+（CI 使用 Node.js 24）
 - **pnpm** 10+（项目锁定 pnpm@10.12.1）
 
 ### 安装和首次构建
@@ -373,7 +373,7 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
 | 步骤 | 命令                                        | 说明                                      |
 | ---- | ------------------------------------------- | ----------------------------------------- |
 | 1    | `actions/checkout` (fetch-depth: 0)         | 检出代码，获取完整 Git 历史               |
-| 2    | `pnpm/action-setup` + `actions/setup-node`  | 安装 pnpm 和 Node.js 20，启用 pnpm 缓存   |
+| 2    | `pnpm/action-setup` + `actions/setup-node`  | 安装 pnpm 和 Node.js 24，启用 pnpm 缓存   |
 | 3    | `pnpm install --frozen-lockfile`            | 安装依赖（严格模式，不允许修改 lockfile） |
 | 4    | `nrwl/nx-set-shas`                          | 设置 Nx 基准 SHA，用于 affected 分析      |
 | 5    | `pnpm run build`                            | 构建所有包                                |

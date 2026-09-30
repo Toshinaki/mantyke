@@ -29,7 +29,7 @@ Documentation: https://toshinaki.github.io/mantyke/
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+ (CI uses Node.js 24)
 - pnpm 10+ (the repository pins `pnpm@10.12.1`)
 
 ### Installation
