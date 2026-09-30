@@ -195,7 +195,7 @@ MIT
 
 ## Links
 
-- [Documentation] (wip)
+- [Documentation](https://toshinaki.github.io/mantyke/masonry)
 - [GitHub](https://github.com/Toshinaki/mantyke)
 - [Issues](https://github.com/Toshinaki/mantyke/issues)
 - [Mantine](https://mantine.dev)
