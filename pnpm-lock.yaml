@@ -269,9 +269,6 @@ importers:
       '@mantinex/mantine-logo':
         specifier: ^2.0.0
         version: 2.0.0(@mantine/core@9.6.3(@mantine/hooks@9.6.3(react@19.2.5))(@types/react@19.3.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@mantine/hooks@9.6.3(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@mantinex/mantine-meta':
-        specifier: ^2.0.0
-        version: 2.0.0
       '@mantyke/masonry':
         specifier: workspace:*
         version: link:../../packages/masonry
@@ -2056,9 +2053,6 @@ packages:
       '@mantine/hooks': '>=7.0.0'
       react: 19.2.5
       react-dom: 19.2.5
-
-  '@mantinex/mantine-meta@2.0.0':
-    resolution: {integrity: sha512-VGnRfCC7F3J3mJH1eNIF06imOWT/D/X1chzchSQLl9SiHhDWaUJGFUO6ur+f2u+hD8VUoiM3UKacpDOMRuG3Fg==}
 
   '@manypkg/find-root@3.1.0':
     resolution: {integrity: sha512-BcSqCyKhBVZ5YkSzOiheMCV41kqAFptW6xGqYSTjkVTl9XQpr+pqHhwgGCOHQtjDCv7Is6EFyA14Sm5GVbVABA==}
@@ -12289,8 +12283,6 @@ snapshots:
       '@mantine/hooks': 9.6.3(react@19.2.5)
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
-
-  '@mantinex/mantine-meta@2.0.0': {}
 
   '@manypkg/find-root@3.1.0':
     dependencies:

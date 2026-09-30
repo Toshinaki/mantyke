@@ -5,7 +5,6 @@ import cx from 'clsx';
 import { AppShell, Container, Group, RemoveScroll, useMantineColorScheme } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
 import { ColorSchemeControl, HeaderControls } from '@mantinex/mantine-header';
-import { meta } from '@mantinex/mantine-meta';
 import { PACKAGES, REPOSITORY_URL } from '../../data';
 import classes from './Shell.module.css';
 
@@ -44,7 +43,9 @@ export function Shell({ children }: ShellProps) {
             withDirectionToggle={false}
             withSearch={false}
             withSupport={false}
-            discordLink={meta.discordLink}
+            withDiscord={false}
+            // discordLink 是 HeaderControls 的必填项，隐藏 Discord 按钮后不会用到
+            discordLink=""
           />
 
           <Group hiddenFrom="sm">
