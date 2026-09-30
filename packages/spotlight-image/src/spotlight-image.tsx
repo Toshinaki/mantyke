@@ -98,6 +98,12 @@ const CLICK_MOVE_TOLERANCE = 5;
 /** 不支持全屏时，点击按钮后提示的显示时长 */
 const FULLSCREEN_HINT_DURATION = 2000;
 const FULLSCREEN_UNSUPPORTED_LABEL = 'Fullscreen is not supported on this device';
+/**
+ * 遮罩背景色的不透明度。通过 `backgroundOpacity` 设置，而不是元素的 `opacity`：
+ * Mantine 靠元素的 `opacity` 实现遮罩的淡入淡出，把它固定成某个值会让遮罩直接出现和消失。
+ */
+const OVERLAY_BACKGROUND_OPACITY = 0.55;
+const OVERLAY_BLUR = 2;
 
 /**
  * Calculate the initial zoom level to fit image within viewport
@@ -756,8 +762,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
         fullScreen
         withCloseButton={false}
         overlayProps={{
-          opacity: 0.9,
-          blur: 2,
+          backgroundOpacity: OVERLAY_BACKGROUND_OPACITY,
+          blur: OVERLAY_BLUR,
           ...restModalProps.overlayProps,
         }}
         padding={0}

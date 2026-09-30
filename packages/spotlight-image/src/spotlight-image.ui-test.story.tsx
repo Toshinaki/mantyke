@@ -65,6 +65,12 @@ const IMAGE_LOAD_TIMEOUT = 5000;
 const VISIBLE_OPACITY = 0.05;
 /** 打开与关闭过程中，图片相对查看区域的大小和位置允许的变化比例 */
 const TRANSITION_TOLERANCE = 0.02;
+/** 暗色背景淡出时至少要经过的不同透明度个数，少于这个数视为突然消失 */
+const MIN_FADE_STEPS = 3;
+/** 暗色背景消失前，透明度应降到打开时的这个比例以下 */
+const FADE_END_RATIO = 0.2;
+/** Mantine Modal 遮罩的静态选择器 */
+const OVERLAY_SELECTOR = '.mantine-Modal-overlay';
 
 const THUMB_SIZE = { width: 120, height: 80 };
 /** 缩略图前后的空白高度，使页面可以滚动 */
@@ -515,6 +521,41 @@ export const SI13: Story = {
       expectClose(sample.centerX, before.centerX, tolerance, `第 ${index + 1} 帧的水平位置`);
       expectClose(sample.centerY, before.centerY, tolerance, `第 ${index + 1} 帧的垂直位置`);
     });
+  },
+};
+
+export const SI14: Story = {
+  name: 'SI-14 关闭时暗色背景逐渐淡出',
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    const readOpacity = () => {
+      const overlay = document.querySelector(OVERLAY_SELECTOR);
+      return overlay ? Number(getComputedStyle(overlay).opacity) : null;
+    };
+    const opened = readOpacity();
+    expect(opened, '打开时暗色背景存在').not.toBeNull();
+
+    const samples: number[] = [];
+    let isStopped = false;
+    const sampling = (async () => {
+      while (!isStopped) {
+        const opacity = readOpacity();
+        if (opacity !== null) {
+          samples.push(opacity);
+        }
+        await nextFrame();
+      }
+    })();
+    await click(viewer.button(LABELS.close));
+    await waitForViewerClosed();
+    isStopped = true;
+    await sampling;
+
+    const distinct = new Set(samples.map((value) => value.toFixed(2)));
+    expect(distinct.size, '淡出过程中经过的不同透明度个数').toBeGreaterThanOrEqual(MIN_FADE_STEPS);
+    expect(samples[samples.length - 1], '消失前的透明度').toBeLessThanOrEqual(
+      opened! * FADE_END_RATIO
+    );
   },
 };
 
