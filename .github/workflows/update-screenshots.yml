@@ -1,0 +1,77 @@
+name: Update Screenshots
+
+# 为 PR 加上 update-screenshots 标签后运行：在 CI 环境中重新生成 L3 基准截图，并提交到这个 PR 的分支。
+# 基准截图只在这里生成，保证与 UI Tests 检查使用同一套系统和字体。
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Update baseline screenshots
+    # 来自 fork 的 PR 取不到密钥，也不应改写基准截图
+    if: >-
+      github.event.label.name == 'update-screenshots' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # 用 GitHub App 的令牌推送。由默认 GITHUB_TOKEN 推送的提交不会触发 PR 检查，
+      # 在要求检查必须通过的规则下，这个 PR 将无法合并。
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Regenerate baseline screenshots
+        run: pnpm test:ui:update
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- ':(glob)**/__screenshots__/**'
+          if git diff --cached --quiet; then
+            echo "Baseline screenshots are unchanged."
+          else
+            git commit -m "test: update baseline screenshots"
+            git push
+          fi
+
+      - name: Remove the label
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label update-screenshots || true

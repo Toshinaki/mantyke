@@ -16,10 +16,10 @@
 | --- | --- | --- |
 | L1 逻辑测试 | jest + jsdom（维持现状） | props、事件、状态切换 |
 | L2 交互测试 | Storybook `play` 函数 + `@storybook/addon-vitest`，在 Chromium 中运行 | 本文档第 4、5 节的用例，实现见 [spotlight-image.ui-test.story.tsx](../packages/spotlight-image/src/spotlight-image.ui-test.story.tsx)、[masonry.ui-test.story.tsx](../packages/masonry/src/masonry.ui-test.story.tsx) |
-| L3 视觉回归 | Vitest browser mode 截图对比 | 本文档第 4.7、5.4 节的状态截图 |
+| L3 视觉回归 | Vitest browser mode 的 `toMatchScreenshot`，与 L2 写在同一个 story 文件中 | 本文档第 4.7、5.4 节的状态截图 |
 | L4 实机确认 | 人工检查清单 | 本文档第 6 节 |
 
-运行方式：`pnpm test:ui`。L2 和 L3 在 Mantine 8 与 Mantine 9 下各运行一遍。大版本升级时，L3 的截图差异和 L4 清单全部确认后才能发布。
+运行方式：`pnpm test:ui`。大版本升级时，L3 的截图差异和 L4 清单全部确认后才能发布。
 
 ## 3. 测试素材与环境
 
@@ -60,7 +60,15 @@ Masonry 用图：12 张，渐变配色各不相同，宽高比依次为 3:2、2:
 
 ### 3.3 截图条件
 
-截图时关闭 CSS 过渡与动画，等待所有图片加载完成。基准截图只在 CI 中生成，Windows 本地的截图不作为基准。
+截图时关闭 CSS 过渡与动画，等待所有图片加载完成，且布局连续多帧不再变化。截图前会把视口高度调到能容纳整个页面，保证截图完整且不缩放。
+
+基准截图只在 CI（Linux）中生成，保存在 story 文件旁的 `__screenshots__` 目录并提交到仓库。不同系统的字体渲染不同，本地的截图不作为基准：
+
+- CI 中的 `UI Tests` 检查会把当前画面与基准截图对比，不一致的像素超过 0.1% 时失败。实际画面和差异图作为 `ui-test-failure-screenshots` 产物上传。
+- 本地运行 `pnpm test:ui` 时，L3 的 story 照常执行，但跳过截图对比。
+- 需要在本地观察截图是否稳定时，先运行 `UI_SCREENSHOTS=local pnpm test:ui:update` 生成本机截图，再运行 `UI_SCREENSHOTS=local pnpm test:ui` 与它们对比。本机截图不会提交。
+
+新增或有意改变画面时，为 PR 加上 `update-screenshots` 标签。`Update Screenshots` 工作流会在 CI 中重新生成基准截图并提交到该 PR 的分支，合并前应当在 PR 的文件对比中逐张确认。
 
 ---
 
@@ -172,7 +180,7 @@ L2 用合成的触摸事件测试，L4 在真机上确认手感。
 | SI-V04 | 放大 2 次并拖动 (150, 80) | 桌面 |
 | SI-V05 | 打开 `small` 后的初始状态 | 桌面 |
 | SI-V06 | 深色配色方案下打开 `landscape` | 桌面 |
-| SI-V07 | 不支持全屏时，全屏按钮的不可用状态与提示 | 手机 |
+| SI-V07 | 不支持全屏时，全屏按钮的不可用状态。点击后的提示会在 2 秒后自动消失，截图时机不稳定，提示由 SI-75 检查 | 手机 |
 
 ### 4.8 加载状态、可访问名称与界面文字
 
@@ -247,7 +255,7 @@ Masonry 的用户分两类：浏览图片的访问者，以及把组件接入页
 | MA-V01 | masonry 变体，12 张图片，`columns=3` | 桌面 |
 | MA-V02 | columns 变体，12 张图片，`columns=3` | 桌面 |
 | MA-V03 | rows 变体，12 张图片，`rows=3` | 桌面 |
-| MA-V04 | 响应式配置（同 MA-09） | 桌面、平板、手机 |
+| MA-V04 | 响应式配置（同 MA-09），masonry 与 columns 变体 | 桌面、平板、手机 |
 | MA-V05 | masonry 变体，文字卡片 | 桌面 |
 | MA-V06 | 三种变体，`gap=0` | 桌面 |
 

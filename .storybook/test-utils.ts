@@ -1,12 +1,16 @@
 import { userEvent as syntheticUserEvent } from 'storybook/test';
 import type { PointerAction, WheelModifier } from './browser-commands.types';
+import type { ViewportSize } from './viewports';
 
 interface BrowserTestApi {
   commands: {
     pointer: (actions: PointerAction[]) => Promise<void>;
     delayRequests: (urlPart: string, delayMs: number) => Promise<void>;
     clearRequestDelays: () => Promise<void>;
+    isScreenshotComparisonEnabled: () => Promise<boolean>;
+    resizeBrowserWindow: (size: ViewportSize) => Promise<ViewportSize>;
   };
+  matchScreenshot: (element: Element, name: string) => Promise<void>;
   page: { viewport: (width: number, height: number) => Promise<void> };
   userEvent: {
     click: (element: Element, options?: ClickOptions) => Promise<void>;
@@ -43,6 +47,8 @@ export interface Rect {
 /** 连续多少帧位置不变才视为稳定，覆盖 CSS 过渡结束后的最后一次布局 */
 const STABLE_FRAMES = 5;
 const DEFAULT_TIMEOUT = 5000;
+/** 截图前调整视口高度的最多次数。滚动条消失后内容会重新排布，高度可能再次变化 */
+const MAX_FIT_PASSES = 3;
 /** 鼠标滚轮滚动一格的 deltaY，与 Chrome 在 Windows 上的默认值一致 */
 export const WHEEL_NOTCH = 100;
 
@@ -143,6 +149,46 @@ export async function delayRequests(urlPart: string, delayMs: number) {
   }
   await api.commands.delayRequests(urlPart, delayMs);
   return () => api.commands.clearRequestDelays();
+}
+
+/**
+ * 把元素当前的画面与基准截图对比（L3 视觉回归）。基准截图保存在 story 旁的 __screenshots__ 中。
+ * 只在 CI 中对比；本地运行与 Storybook 界面中跳过，见 browser-commands.ts 的 isScreenshotComparisonEnabled。
+ */
+export async function matchScreenshot(element: Element, name: string) {
+  const api = getApi();
+  if (!api || !(await api.commands.isScreenshotComparisonEnabled())) {
+    return;
+  }
+
+  // 截图只能拍到视口内的内容，并且测试页面在窗口放不下时会被缩小显示。
+  // 先把视口高度调到能容纳整个页面，再把浏览器窗口调到不小于视口，截图才完整且不缩放。
+  const width = window.innerWidth;
+  const originalHeight = window.innerHeight;
+  const readPageHeight = () => Math.ceil(document.documentElement.scrollHeight);
+  let height = 0;
+  let originalWindow: ViewportSize | undefined;
+  for (let pass = 0; pass < MAX_FIT_PASSES; pass++) {
+    const required = Math.max(originalHeight, readPageHeight());
+    if (required <= height) {
+      break;
+    }
+    height = required;
+    const previousWindow = await api.commands.resizeBrowserWindow({ width, height });
+    originalWindow ??= previousWindow;
+    await api.page.viewport(width, height);
+    await waitForStable(() => String(readPageHeight()));
+  }
+
+  try {
+    await api.matchScreenshot(element, name);
+  } finally {
+    if (originalWindow) {
+      await api.commands.resizeBrowserWindow(originalWindow);
+    }
+    await api.page.viewport(width, originalHeight);
+    await waitFrames(2);
+  }
 }
 
 export async function click(element: Element, options?: ClickOptions) {

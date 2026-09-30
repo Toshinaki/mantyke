@@ -6,6 +6,7 @@ import {
   click,
   delayRequests,
   drag,
+  matchScreenshot,
   nextFrame,
   pointer,
   press,
@@ -1350,4 +1351,110 @@ export const SI83b: Story = {
       expect(viewer.button(name), `「${name}」按钮保持默认文字`).toBeVisible()
     );
   },
+};
+
+// ---------------------------------------------------------------------------
+// 4.7 视觉回归（L3）
+// ---------------------------------------------------------------------------
+
+const FITS = ['cover', 'contain', 'fill', 'scale-down', 'none'] as const;
+const FIT_SCENE_TEST_ID = 'fit-scene';
+/** 缩略图的比例与图片不同，才能看出各种 fit 的区别 */
+const FIT_THUMB_SIZE = 200;
+/** Mantine 在根元素上标记当前配色方案的属性 */
+const COLOR_SCHEME_ATTRIBUTE = 'data-mantine-color-scheme';
+
+function FitScene() {
+  return (
+    <div data-testid={FIT_SCENE_TEST_ID} style={{ display: 'flex', gap: 16, padding: 24 }}>
+      {FITS.map((fit) => (
+        <SpotlightImage
+          key={fit}
+          src={fixtureSrc(small)}
+          alt={fit}
+          fit={fit}
+          w={FIT_THUMB_SIZE}
+          h={FIT_THUMB_SIZE}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** 在各视口下打开图片，截取查看器的初始状态。弹窗铺满视口，截图范围即整个视口 */
+async function expectInitialViewerScreenshots(
+  id: string,
+  fixture: ImageFixture,
+  viewports: ViewportName[]
+) {
+  for (const viewportName of viewports) {
+    const { width, height } = VIEWPORTS[viewportName];
+    await setViewport(width, height);
+    const viewer = await openViewer(fixture);
+    await matchScreenshot(viewer.dialog, `${id}-${viewportName}`);
+    await closeViewer(viewer);
+  }
+}
+
+export const SIV01: Story = {
+  name: 'SI-V01 缩略图的各种 fit',
+  render: () => <FitScene />,
+  play: async () => {
+    const scene = screen.getByTestId(FIT_SCENE_TEST_ID);
+    await waitFor(() =>
+      within(scene)
+        .getAllByRole<HTMLImageElement>('button')
+        .forEach((image) => expect(image.naturalWidth, `${image.alt} 加载完成`).toBeGreaterThan(0))
+    );
+    await matchScreenshot(scene, 'SI-V01-desktop');
+  },
+};
+
+export const SIV02: Story = {
+  name: 'SI-V02 打开横图后的初始状态',
+  play: () => expectInitialViewerScreenshots('SI-V02', landscape, ['desktop', 'mobile']),
+};
+
+export const SIV03: Story = {
+  name: 'SI-V03 打开长图后的初始状态',
+  args: { fixtures: [tall] },
+  play: () => expectInitialViewerScreenshots('SI-V03', tall, ['desktop', 'mobile']),
+};
+
+export const SIV04: Story = {
+  name: 'SI-V04 放大并拖动后的状态',
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    await clickButton(viewer, LABELS.zoomIn, 2);
+    await drag(viewCenter(), { x: 150, y: 80 });
+    await viewer.rect();
+    await matchScreenshot(viewer.dialog, 'SI-V04-desktop');
+  },
+};
+
+export const SIV05: Story = {
+  name: 'SI-V05 打开小图后的初始状态',
+  args: { fixtures: [small] },
+  play: () => expectInitialViewerScreenshots('SI-V05', small, ['desktop']),
+};
+
+export const SIV06: Story = {
+  name: 'SI-V06 深色配色方案下的查看器',
+  play: async () => {
+    const root = document.documentElement;
+    const previousScheme = root.getAttribute(COLOR_SCHEME_ATTRIBUTE) ?? 'light';
+    root.setAttribute(COLOR_SCHEME_ATTRIBUTE, 'dark');
+    try {
+      await expectInitialViewerScreenshots('SI-V06', landscape, ['desktop']);
+    } finally {
+      root.setAttribute(COLOR_SCHEME_ATTRIBUTE, previousScheme);
+    }
+  },
+};
+
+// 点击后的提示会在 2 秒后自动消失，截图时机不稳定，这里只截按钮的不可用状态；提示由 SI-75 检查
+export const SIV07: Story = {
+  name: 'SI-V07 不支持全屏时的全屏按钮',
+  beforeEach: simulateNoFullscreenSupport,
+  play: () => expectInitialViewerScreenshots('SI-V07', landscape, ['mobile']),
 };
