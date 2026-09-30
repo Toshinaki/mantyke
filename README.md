@@ -194,6 +194,8 @@ Releases are automated via GitHub Actions when changesets are merged to master:
 
 Publishing uses npm trusted publishing (OIDC) with provenance, so no npm token is stored in the repository.
 
+The "Version Packages" PR is created by a GitHub App (secrets `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY`, permissions: Contents, Pull requests and Workflows read/write), so PR checks run on it like on any other PR.
+
 ### Manual Release
 
 ```bash

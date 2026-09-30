@@ -24,8 +24,22 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # 用 GitHub App 的令牌创建和更新 Version Packages PR。
+      # 由默认 GITHUB_TOKEN 引发的事件不会触发其他工作流，PR 检查就不会运行，
+      # 在要求检查必须通过的规则下，这个 PR 将无法合并。
+      # App 需要 Contents、Pull requests、Workflows 三项读写权限（发布分支会带上工作流文件的改动）。
+      - name: Generate release token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      # checkout 保存的凭据会被后续的 git push 使用，因此这里也要用 App 的令牌
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -71,7 +85,7 @@ jobs:
           publish: pnpm release
           commit: 'chore: release packages'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_CONFIG_PROVENANCE: true
 
       - name: Create GitHub Releases
