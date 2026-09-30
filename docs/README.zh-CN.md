@@ -430,25 +430,18 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
 
 ```
 1. 检出代码、安装依赖、运行 pnpm run build
-2. 检查是否有待发布的 changeset
+2. changesets/action 运行
    │
-   ├── 没有 changeset → 跳过，输出 "No changes to release"
+   ├── 情况 A：.changeset/ 中有未消费的 changeset →
+   │   创建或更新 "Version Packages" PR
+   │   （自动 bump 版本号、更新 CHANGELOG）
    │
-   └── 有 changeset →
-       │
-       ├── changesets/action 运行
-       │   │
-       │   ├── 情况 A：changeset 未消费 →
-       │   │   创建 "Version Packages" PR
-       │   │   （自动 bump 版本号、更新 CHANGELOG）
-       │   │
-       │   └── 情况 B：版本已 bump（Version Packages PR 被合并后）→
-       │       运行 `pnpm release`（即 `changeset publish`）
-       │       发布到 npm
-       │
-       └── 如果有包发布成功 →
-           为每个发布的包创建 GitHub Release
-           标签格式：{包名}@{版本号}
+   └── 情况 B：没有未消费的 changeset（Version Packages PR 被合并后，或普通提交）→
+       运行 `pnpm release`（即 `changeset publish`）
+       只发布 npm 上还不存在的版本；没有新版本时不发布任何包
+3. 如果有包发布成功 →
+   为每个发布的包创建 GitHub Release
+   标签格式：{包名}@{版本号}
 ```
 
 > `changeset publish` 从 2.31 起会拒绝不认识的参数，`publish` 命令中不要再添加 `--access`、`--provenance` 之类的参数。

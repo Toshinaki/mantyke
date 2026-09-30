@@ -60,19 +60,9 @@ jobs:
         # 各包的 build target 都执行根目录的 pnpm run build（构建全部包），并行运行会争用 temp/ 目录
         run: pnpm run build
 
-      - name: Check for changes
-        id: changes
-        run: |
-          if pnpm changeset status --since=HEAD~1 2>/dev/null | grep -q "No changesets present"; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-            echo "No changesets found, skipping release"
-          else
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-            echo "Changesets found, proceeding with release"
-          fi
-
+      # 有未消费的 changeset 时创建或更新 Version Packages PR；
+      # 没有时执行 publish，只发布 npm 上还不存在的版本，没有新版本则不发布任何包
       - name: Create Release Pull Request or Publish
-        if: steps.changes.outputs.has-changes == 'true'
         id: changesets
         uses: changesets/action@v1
         with:
@@ -115,14 +105,11 @@ jobs:
       - name: Release summary
         if: always()
         run: |
-          if [ "${{ steps.changes.outputs.has-changes }}" = "true" ]; then
-            if [ "${{ steps.changesets.outputs.published }}" = "true" ]; then
-              echo "✅ Packages published successfully"
-              echo "Published packages: ${{ steps.changesets.outputs.publishedPackages }}"
-            else
-              echo "📝 Release PR created or updated"
-              echo "PR URL: ${{ steps.changesets.outputs.pullRequestNumber }}"
-            fi
+          if [ "${{ steps.changesets.outputs.published }}" = "true" ]; then
+            echo "✅ Packages published successfully"
+            echo "Published packages: ${{ steps.changesets.outputs.publishedPackages }}"
+          elif [ "${{ steps.changesets.outputs.hasChangesets }}" = "true" ]; then
+            echo "📝 Release PR created or updated: #${{ steps.changesets.outputs.pullRequestNumber }}"
           else
             echo "ℹ️ No changes to release"
           fi
