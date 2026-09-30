@@ -396,8 +396,8 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
 
 包含两个 job：
 
-- **Validate PR**：构建、类型检查、ESLint、Stylelint、单元测试、文档站构建、changeset 检查。失败会拦截合并。
-- **UI Tests**：安装 Chromium 后运行 `pnpm run test:ui`，失败时上传截图。目前设置为 `continue-on-error`，结果仅供参考，不拦截合并。
+- **Validate PR**：构建、类型检查、ESLint、Stylelint、单元测试、文档站构建、changeset 检查。
+- **UI Tests**：安装 Chromium 后运行 `pnpm run test:ui`，失败时上传截图。
 
 **与 ci.yml 的关键区别**：
 
@@ -406,7 +406,7 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
 | 类型检查、lint、单元测试   | `nx run-many`（所有项目） | `nx affected`（仅受影响的项目） |
 | 构建                       | `pnpm run build`          | `pnpm run build`                |
 | 覆盖率报告                 | 不上传                    | 上传 artifact（保留 7 天）      |
-| UI 测试                    | 无                        | 有（不拦截合并）                |
+| UI 测试                    | 无                        | 有                              |
 | Changeset 检查             | 无                        | 有（检查是否添加了变更集）      |
 
 **Changeset 检查逻辑**：
@@ -684,9 +684,8 @@ git push origin feat/my-feature
 | Prettier            | 代码格式统一                                 |
 | syncpack            | monorepo 依赖版本一致                        |
 | 单元测试            | 所有测试必须通过                             |
+| UI 测试             | 所有自动运行的 UI 测试必须通过               |
 | 构建验证            | `pnpm run build` 与文档站构建必须成功        |
-
-UI 测试也会在每个 PR 上运行，目前不拦截合并。
 
 ---
 
