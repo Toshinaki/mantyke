@@ -1175,6 +1175,12 @@ function simulateNoFullscreenSupport() {
   };
 }
 
+/** 按钮的底色、图标颜色与不透明度，用于比较两个按钮看起来是否相同 */
+function appearanceOf(element: Element) {
+  const { backgroundColor, color, opacity } = getComputedStyle(element);
+  return [backgroundColor, color, opacity].join(' | ');
+}
+
 export const SI75: Story = {
   name: 'SI-75 不支持全屏的设备',
   beforeEach: simulateNoFullscreenSupport,
@@ -1184,6 +1190,9 @@ export const SI75: Story = {
     const isDisabled =
       button.hasAttribute('disabled') || button.getAttribute('aria-disabled') === 'true';
     expect(isDisabled, '全屏按钮显示为不可用').toBe(true);
+    expect(appearanceOf(button), '不可用的按钮外观与可用的按钮不同').not.toBe(
+      appearanceOf(viewer.button(LABELS.zoomIn))
+    );
 
     await click(button, { force: true });
     const tooltip = await screen.findByRole('tooltip');
