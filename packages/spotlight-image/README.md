@@ -83,12 +83,14 @@ function Demo() {
   alt="Custom modal"
   modalProps={{
     overlayProps: {
-      opacity: 0.95,
+      backgroundOpacity: 0.95,
       blur: 5
     }
   }}
 />
 ```
+
+Use `backgroundOpacity` to change how dark the backdrop is. Do not set `opacity` on the overlay: Mantine animates it to fade the backdrop in and out, so a fixed value makes the backdrop appear and disappear abruptly.
 
 ### With a Fallback Image
 
