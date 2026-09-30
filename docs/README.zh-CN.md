@@ -426,6 +426,8 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
 
 **npm 认证**：使用 npm trusted publishing（OIDC），仓库中不保存 npm token。发布时通过环境变量 `NPM_CONFIG_PROVENANCE` 生成来源证明（provenance）。
 
+**GitHub 令牌**：Version Packages PR 由 GitHub App 创建和更新，每次运行时用 `actions/create-github-app-token` 临时生成令牌（有效期 1 小时）。默认的 `GITHUB_TOKEN` 引发的事件不会触发其他工作流，改用 App 令牌后，这个 PR 会正常运行 PR 检查。App 需要 Contents、Pull requests、Workflows 三项读写权限，凭据保存在仓库 secrets 的 `RELEASE_APP_ID` 和 `RELEASE_APP_PRIVATE_KEY` 中。
+
 **执行流程**：
 
 ```
@@ -530,7 +532,7 @@ pnpm changeset
    自动创建 GitHub Release
 ```
 
-> "Version Packages" PR 由 github-actions[bot] 创建，GitHub 不会为它自动运行 pr.yml，PR 页面上的验证显示为未运行或失败属于正常现象。它只修改版本号和 CHANGELOG，合并后由 master 的 CI 完整验证。
+> "Version Packages" PR 由发布用的 GitHub App 创建，和普通 PR 一样需要通过 PR 检查才能合并。
 
 ### 手动发布
 
