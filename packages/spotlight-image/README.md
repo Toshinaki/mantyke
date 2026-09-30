@@ -18,6 +18,8 @@ Interactive image component with zoom and pan capabilities for Mantine UI.
 - ⚡ **Smooth Animations** - Fluid transitions and interactions
 - 🎨 **Mantine Integration** - Works seamlessly with Mantine theme
 - ♿ **Keyboard Support** - ESC to close, accessible controls
+- 🌐 **Localizable** - Replace the viewer's texts with the `labels` prop
+- ⏳ **Loading & Fallback** - Loading indicator for slow images, `fallbackSrc` when an image fails to load
 - 📱 **Responsive** - Adapts to viewport size
 - 🎯 **TypeScript** - Full type safety and IntelliSense
 
@@ -88,6 +90,41 @@ function Demo() {
 />
 ```
 
+### With a Fallback Image
+
+`fallbackSrc` is used by both the thumbnail and the viewer when `src` fails to load:
+
+```tsx
+<SpotlightImage
+  src="/image.jpg"
+  alt="With fallback"
+  fallbackSrc="/placeholder.jpg"
+/>
+```
+
+### With Translated Labels
+
+Pass only the texts to replace. The rest keep their English defaults:
+
+```tsx
+<SpotlightImage
+  src="/image.jpg"
+  alt="山景"
+  labels={{
+    zoomIn: '放大',
+    zoomOut: '缩小',
+    resetZoom: '重置缩放',
+    close: '关闭',
+    enterFullscreen: '进入全屏',
+    exitFullscreen: '退出全屏',
+    fullscreenUnsupported: '当前设备不支持全屏',
+    loading: '图片加载中',
+  }}
+/>
+```
+
+To translate every `SpotlightImage` at once, set `labels` as a default prop in the Mantine theme (`theme.components.SpotlightImage`).
+
 ## Props
 
 ### SpotlightImageProps
@@ -104,6 +141,8 @@ Extends `ImageProps` from `@mantine/core`.
 | `minZoom`    | `number`                                                   | `0.25`       | Minimum zoom level. If the fit-to-screen zoom is lower, it is used instead |
 | `keepImageInView` | `boolean`                                             | `false`      | Stop the zoomed image from being dragged out of view |
 | `modalProps` | `Omit<ModalProps, 'opened' \| 'onClose' \| 'fullScreen' \| 'withCloseButton'>` | `{}`         | Props passed to Mantine Modal. Set `closeOnClickOutside: true` to close when the area around the image is clicked |
+| `fallbackSrc` | `string`                                                  | -            | Image shown in the thumbnail and in the viewer when `src` fails to load |
+| `labels`     | `Partial<SpotlightImageLabels>`                            | English      | Texts of the viewer: button names, loading indicator and the fullscreen hint |
 | `width`      | `number \| string`                                         | -            | Image width                   |
 | `height`     | `number \| string`                                         | -            | Image height                  |
 | `radius`     | `MantineRadius`                                            | -            | Border radius                 |
@@ -146,6 +185,13 @@ Extends `ImageProps` from `@mantine/core`.
 - **0** - Reset zoom
 - **Enter** / **Space** - Open spotlight from thumbnail
 
+## Accessibility
+
+- The thumbnail is a button: it can be focused and opened with **Enter** or **Space**.
+- The viewer dialog is named after the image's `alt`, so screen readers announce which image is open.
+- While the full-size image is loading, the viewer shows a loading indicator (`role="status"`).
+- Every control has an accessible name, which can be translated with `labels`.
+
 ## Styling
 
 ### Layer Styles
@@ -179,6 +225,7 @@ Fully typed with exported interfaces:
 import type { 
   SpotlightImageProps,
   SpotlightImageFactory,
+  SpotlightImageLabels,
   SpotlightImageStylesNames,
   SpotlightImageCssVariables
 } from '@mantyke/spotlight-image';

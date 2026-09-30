@@ -102,6 +102,21 @@ export const CustomZoom: Story = {
   args: { zoomSpeed: 1.5, maxZoom: 8, minZoom: 0.5 },
 };
 
+export const TranslatedLabels: Story = {
+  args: {
+    labels: {
+      zoomIn: '放大',
+      zoomOut: '缩小',
+      resetZoom: '重置缩放',
+      close: '关闭',
+      enterFullscreen: '进入全屏',
+      exitFullscreen: '退出全屏',
+      fullscreenUnsupported: '当前设备不支持全屏',
+      loading: '图片加载中',
+    },
+  },
+};
+
 export const NewOptions: Story = {
   name: 'Close on click outside & keep in view',
   args: { closeOnClickOutside: true, keepImageInView: true },

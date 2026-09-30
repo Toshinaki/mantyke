@@ -80,10 +80,28 @@ section.modalContent {
   user-select: none;
   pointer-events: none;
   opacity: 0;
+  /* 加载失败时浏览器显示替代文字，在暗色背景上用白色才看得清 */
+  color: var(--mantine-color-white);
 }
 
-.imageLoaded {
+/* 加载结束后显示图片。加载失败且没有备用图片时，显示的是浏览器给出的替代文字 */
+.imageSettled {
   opacity: 1;
+}
+
+/* 加载指示显示在查看区域中间，不拦截指针事件 */
+.loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* 两个 class 组合，优先级高于 Mantine 在 Loader 根元素上定义的默认颜色 */
+.loader .loaderIcon {
+  --loader-color: var(--mantine-color-white);
 }
 
 /* 图片以适配大小显示之后才启用缩放与平移的过渡，避免打开时看到图片从原始尺寸缩小 */
