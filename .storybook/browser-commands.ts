@@ -33,9 +33,7 @@ async function toPagePoint(ctx: BrowserCommandContext, x: number, y: number) {
 
 /** 依次执行一组鼠标动作，产生的是浏览器可信事件，与真实用户操作一致 */
 export const pointer: BrowserCommand<[actions: PointerAction[]]> = async (ctx, actions) => {
-  if (ctx.provider.name !== 'playwright') {
-    throw new Error(`pointer 命令只支持 playwright，当前为 ${ctx.provider.name}`);
-  }
+  assertPlaywright(ctx, 'pointer');
   const { mouse, keyboard } = ctx.page;
 
   for (const action of actions) {
