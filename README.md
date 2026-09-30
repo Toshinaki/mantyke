@@ -6,7 +6,12 @@ A collection of Mantine UI extension components built with TypeScript, organized
 
 ## Packages
 
-- **[@mantyke/spotlight-image](./packages/spotlight-image)** - Interactive image component with zoom and pan functionality
+| Package                                                  | Description                                                           | npm                                                                                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [@mantyke/spotlight-image](./packages/spotlight-image) | Image viewer with zoom, pan and fullscreen                            | [![NPM Version](https://img.shields.io/npm/v/@mantyke/spotlight-image)](https://www.npmjs.com/package/@mantyke/spotlight-image) |
+| [@mantyke/masonry](./packages/masonry)                   | Masonry, justified columns and justified rows layouts                 | [![NPM Version](https://img.shields.io/npm/v/@mantyke/masonry)](https://www.npmjs.com/package/@mantyke/masonry)                 |
+
+Documentation: https://toshinaki.github.io/mantyke/
 
 ## Tech Stack
 
@@ -14,9 +19,10 @@ A collection of Mantine UI extension components built with TypeScript, organized
 - **Build Orchestration**: Nx
 - **Build Tool**: Rollup with TypeScript
 - **Version Management**: Changesets
-- **Documentation**: Next.js
-- **Testing**: Jest + React Testing Library
-- **Linting**: ESLint with TypeScript ESLint
+- **Documentation**: Next.js, deployed to GitHub Pages
+- **Unit Testing**: Jest + React Testing Library
+- **UI Testing**: Storybook stories run in Chromium via `@storybook/addon-vitest` (Vitest browser mode + Playwright)
+- **Linting**: ESLint, Stylelint, Prettier
 - **CI/CD**: GitHub Actions
 
 ## Getting Started
@@ -24,7 +30,7 @@ A collection of Mantine UI extension components built with TypeScript, organized
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 9+
+- pnpm 10+ (the repository pins `pnpm@10.12.1`)
 
 ### Installation
 
@@ -45,17 +51,14 @@ pnpm run build
 # Start documentation site (with hot reload)
 pnpm run dev
 
-# Start Storybook
+# Start Storybook on port 8271
 pnpm run storybook
 
-# Run tests
+# Run syncpack, prettier, typecheck, lint and unit tests
 pnpm run test
 
-# Run linting
-pnpm run lint
-
-# Type check
-pnpm run typecheck
+# Run UI tests in Chromium (not part of `pnpm run test`)
+pnpm run test:ui
 ```
 
 ## Project Structure
@@ -63,11 +66,14 @@ pnpm run typecheck
 ```
 .
 ├── apps/
-│   └── docs/              # Next.js documentation site
+│   └── docs/                  # Next.js documentation site (overview + one page per package)
 ├── packages/
-│   └── spotlight-image/   # Component packages
-├── scripts/               # Build and utility scripts
-└── .github/workflows/     # CI/CD workflows
+│   ├── spotlight-image/       # @mantyke/spotlight-image
+│   └── masonry/               # @mantyke/masonry
+├── .storybook/                # Storybook config, UI test helpers and test image fixtures
+├── docs/                      # Chinese README and the UI test plan
+├── scripts/                   # Build and utility scripts
+└── .github/workflows/         # CI/CD workflows
 ```
 
 ## Available Scripts
@@ -77,81 +83,88 @@ pnpm run typecheck
 - `pnpm run build` - Build all packages
 - `pnpm run clean` - Clean all build outputs
 - `pnpm run dev` - Start docs dev server
-- `pnpm run test` - Run all tests with linting
-- `pnpm run lint` - Lint all projects
+- `pnpm run test` - Run syncpack, prettier, typecheck, lint and unit tests
+- `pnpm run test:ui` - Run UI tests (Storybook stories in Chromium)
+- `pnpm run lint` - Run ESLint and Stylelint
 - `pnpm run typecheck` - Type check all projects
-- `pnpm run docgen` - Generate component documentation
+- `pnpm run docgen` - Generate component props data for the docs site
 - `pnpm run docs:build` - Build documentation site
 - `pnpm run storybook` - Start Storybook
+- `pnpm run fixtures:generate` - Regenerate UI test images after editing `.storybook/fixtures.ts`
 
 ### Nx Commands
 
 ```bash
-# Build specific package
-pnpm nx build @mantyke/spotlight-image
-
-# Run tests for specific package
+# Run unit tests for a specific package
 pnpm nx test @mantyke/spotlight-image
 
-# Build all packages except docs
-pnpm nx run-many -t build --exclude=mantyke-docs
+# Type check or lint only affected projects
+pnpm nx affected -t typecheck lint
 
-# See affected projects
-pnpm nx affected:graph
+# See the project graph of affected projects
+pnpm nx graph --affected
 ```
+
+Each package's `build` target runs the root `pnpm run build`, which builds every package. Use `pnpm run build` directly instead of running the `build` target for several projects in parallel; parallel runs share the `temp/` directory and can fail.
+
+## UI Tests
+
+UI test cases are written from the user's point of view in [docs/ui-test-plan.md](docs/ui-test-plan.md) and implemented as `*.ui-test.story.tsx` stories with `play` functions. When the code disagrees with a case, treat it as a likely bug rather than adjusting the case.
+
+- Test images are generated by `pnpm run fixtures:generate` from the specs in `.storybook/fixtures.ts`
+- Chromium is required: `pnpm exec playwright install chromium`
+- In CI, UI tests run as a separate, non-blocking job in PR validation
 
 ## Adding a New Package
 
-1. Create package structure:
-```bash
-mkdir -p packages/my-component/src
-```
+1. Create `packages/my-component/` with `src/index.ts`, `package.json` and `project.json`. Rollup discovers packages that have both `package.json` and `src/index.ts`.
 
-2. Add `package.json`:
-```json
-{
-  "name": "@mantyke/my-component",
-  "version": "0.1.0",
-  "main": "./dist/cjs/index.cjs",
-  "module": "./dist/esm/index.mjs",
-  "types": "./dist/types/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.mjs",
-      "require": "./dist/cjs/index.cjs"
-    },
-    "./styles.css": "./dist/styles.css"
-  },
-  "peerDependencies": {
-    "@mantine/core": ">=7.0.0",
-    "react": "^18.x || ^19.x"
-  }
-}
-```
+   `package.json` needs `publishConfig.access: "public"`, otherwise the scoped package is published as restricted:
 
-3. Add `project.json` for Nx:
-```json
-{
-  "name": "@mantyke/my-component",
-  "root": "packages/my-component",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
-      "options": {
-        "command": "pnpm run build",
-        "cwd": "{workspaceRoot}"
-      }
-    }
-  }
-}
-```
+   ```json
+   {
+     "name": "@mantyke/my-component",
+     "version": "0.1.0",
+     "publishConfig": {
+       "access": "public"
+     },
+     "main": "./dist/cjs/index.cjs",
+     "module": "./dist/esm/index.mjs",
+     "types": "./dist/types/index.d.ts",
+     "exports": {
+       ".": {
+         "import": "./dist/esm/index.mjs",
+         "require": "./dist/cjs/index.cjs"
+       },
+       "./styles.css": "./dist/styles.css"
+     },
+     "peerDependencies": {
+       "@mantine/core": ">=7.0.0",
+       "@mantine/hooks": ">=7.0.0",
+       "react": "^18.x || ^19.x",
+       "react-dom": "^18.x || ^19.x"
+     }
+   }
+   ```
 
-4. Create component and run:
-```bash
-pnpm install
-pnpm run build
-```
+   Copy `project.json` from an existing package (targets: build, typecheck, lint, test, stylelint).
+
+2. Add the package to the docs site:
+   - `apps/docs/data.ts`: add an entry to `PACKAGES`
+   - `apps/docs/pages/<slug>.tsx` and `apps/docs/<slug>.mdx`
+   - demos in `apps/docs/demos/`, Styles API data in `apps/docs/styles-api/`
+   - import the package styles in `apps/docs/pages/_app.tsx`
+   - add the package to `apps/docs/package.json` and the component path to `scripts/docgen.ts`
+
+3. Add stories (`*.story.tsx`) and UI tests (`*.ui-test.story.tsx`, with cases in `docs/ui-test-plan.md`).
+
+4. Run:
+
+   ```bash
+   pnpm install
+   pnpm run build
+   pnpm run test
+   ```
 
 ## Release Process
 
@@ -176,8 +189,10 @@ Releases are automated via GitHub Actions when changesets are merged to master:
 1. Create changeset on your feature branch
 2. Commit changeset file
 3. Open PR and get it merged
-4. CI will automatically create a "Version Packages" PR
-5. Merge the version PR to publish to npm
+4. After master CI succeeds, the Release workflow opens a "Version Packages" PR
+5. Merge the version PR; after master CI succeeds again, the Release workflow publishes to npm and creates GitHub Releases
+
+Publishing uses npm trusted publishing (OIDC) with provenance, so no npm token is stored in the repository.
 
 ### Manual Release
 
@@ -202,10 +217,13 @@ pnpm changeset publish
 ### Code Quality
 
 All PRs must pass:
+
 - Type checking
 - Linting (ESLint + Stylelint)
 - Unit tests
-- Build validation
+- Build validation (packages and docs)
+
+UI tests also run on every PR but do not block merging yet.
 
 ## License
 
@@ -213,5 +231,5 @@ MIT
 
 ## Links
 
-- [Documentation] (wip)
+- [Documentation](https://toshinaki.github.io/mantyke/)
 - [Mantine UI](https://mantine.dev)
