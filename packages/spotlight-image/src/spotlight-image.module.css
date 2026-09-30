@@ -72,9 +72,7 @@ section.modalContent {
 }
 
 .modalImage {
-  transition:
-    transform 0.2s ease,
-    opacity 0.3s ease;
+  transition: opacity 0.3s ease;
   max-width: none;
   max-height: none;
   width: auto;
@@ -86,6 +84,13 @@ section.modalContent {
 
 .imageLoaded {
   opacity: 1;
+}
+
+/* 图片以适配大小显示之后才启用缩放与平移的过渡，避免打开时看到图片从原始尺寸缩小 */
+.transformAnimated {
+  transition:
+    transform 0.2s ease,
+    opacity 0.3s ease;
 }
 
 /* 拖动或触摸时取消位移过渡，图片直接跟随指针或手指 */
