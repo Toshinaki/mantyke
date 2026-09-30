@@ -4,7 +4,9 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "{workspaceRoot}"
@@ -20,13 +22,18 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["packages/spotlight-image/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "packages/spotlight-image/**/*.{ts,tsx,js,jsx}"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
       "options": {
-        "jestConfig": "jest.config.cjs"
+        "jestConfig": "jest.config.cjs",
+        "testPathPatterns": [
+          "packages[\\/]spotlight-image[\\/]"
+        ]
       }
     },
     "stylelint": {
