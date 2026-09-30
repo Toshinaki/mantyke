@@ -1,5 +1,11 @@
 # @mantyke/spotlight-image
 
+## 0.3.1
+
+### Patch Changes
+
+- 4999b33: Link the README to the package's page on the documentation site.
+
 ## 0.3.0
 
 ### Minor Changes
