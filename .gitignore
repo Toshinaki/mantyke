@@ -159,3 +159,6 @@ vitest.config.*.timestamp*
 # Claude Code local settings (per developer)
 .claude/settings.local.json
 .claude/launch.json
+
+# generate-dts working directory (left behind when a build fails midway)
+temp/

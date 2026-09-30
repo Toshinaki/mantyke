@@ -583,10 +583,10 @@ mkdir -p packages/my-component/src
     "./styles.css": "./dist/styles.css"
   },
   "peerDependencies": {
-    "@mantine/core": ">=7.0.0",
-    "@mantine/hooks": ">=7.0.0",
-    "react": "^18.x || ^19.x",
-    "react-dom": "^18.x || ^19.x"
+    "@mantine/core": "^9.0.0",
+    "@mantine/hooks": "^9.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }
 ```

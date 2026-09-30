@@ -412,7 +412,7 @@ function computeColumnsLayout(
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export const Masonry = factory<MasonryFactory>((_props, ref) => {
+export const Masonry = factory<MasonryFactory>((_props) => {
   const props = useProps('Masonry', defaultProps, _props);
   const {
     classNames,
@@ -426,6 +426,9 @@ export const Masonry = factory<MasonryFactory>((_props, ref) => {
     rows: rowCount = 2,
     gap,
     children,
+    // Mantine 9 起 ref 是普通的 prop。这里显式取出：columns / rows 变体要把它与内部的测量 ref 合并，
+    // 如果留在 others 中一起展开，会覆盖合并后的 ref
+    ref,
     ...others
   } = props;
 

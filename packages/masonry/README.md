@@ -33,6 +33,8 @@ pnpm add @mantyke/masonry
 
 ### Peer Dependencies
 
+Requires Mantine 9 (`@mantine/core` and `@mantine/hooks` `^9.0.0`) and React 19.2 or later. For Mantine 7 or 8, use the last 0.x release.
+
 ```bash
 pnpm add @mantine/core @mantine/hooks react react-dom
 ```

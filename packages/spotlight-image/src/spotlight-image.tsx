@@ -24,7 +24,7 @@ import {
   type ModalProps,
   type StylesApiProps,
 } from '@mantine/core';
-import { useFullscreen, useTimeout } from '@mantine/hooks';
+import { useFullscreenElement, useTimeout } from '@mantine/hooks';
 import classes from './spotlight-image.module.css';
 
 export type SpotlightImageStylesNames = 'root';
@@ -124,6 +124,25 @@ function getWheelDeltaPx(e: WheelEvent) {
   return e.deltaY;
 }
 
+/**
+ * 把使用者通过 `modalProps.classNames` 传入的 class 与组件自身的 class 合并。
+ * Mantine 的 `classNames` 既可以是对象，也可以是根据主题与 props 返回对象的函数，两种形式都要支持。
+ */
+function mergeModalClassNames(userClassNames: ModalProps['classNames']): ModalProps['classNames'] {
+  return (theme, props, ctx) => {
+    const resolved =
+      typeof userClassNames === 'function'
+        ? userClassNames(theme, props, ctx)
+        : (userClassNames ?? {});
+    return {
+      ...resolved,
+      root: clsx(classes.modalRoot, resolved.root),
+      content: clsx(classes.modalContent, resolved.content),
+      body: clsx(classes.modalBody, resolved.body),
+    };
+  };
+}
+
 /** iPhone Safari 等浏览器不支持对普通元素调用全屏 API */
 function isFullscreenSupported() {
   if (typeof document === 'undefined') {
@@ -133,7 +152,7 @@ function isFullscreenSupported() {
   return Boolean(doc.fullscreenEnabled ?? doc.webkitFullscreenEnabled);
 }
 
-export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
+export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
   const props = useProps('SpotlightImage', defaultProps, _props);
   const {
     classNames,
@@ -151,6 +170,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
     minZoom = 0.25,
     keepImageInView = false,
     modalProps,
+    ref,
     ...others
   } = props;
   const { closeOnClickOutside = false, ...restModalProps } = modalProps ?? {};
@@ -216,9 +236,9 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
   const stateRef = useRef<ViewState>({ ...INITIAL_VIEW });
   /** Timer ID for debounced sync of stateRef back to React state after zoom */
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Destructure `ref` from `useFullscreen` so we can attach it to the
+  // Destructure `ref` from `useFullscreenElement` so we can attach it to the
   // spotlight container instead of letting it default to `document.documentElement`.
-  const { ref: fullscreenRef, toggle: toggleFullscreen, fullscreen } = useFullscreen();
+  const { ref: fullscreenRef, toggle: toggleFullscreen, fullscreen } = useFullscreenElement();
 
   /**
    * Callback ref for the spotlight container div. Serves three purposes:
@@ -715,12 +735,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props, ref) => {
           ...restModalProps.overlayProps,
         }}
         padding={0}
-        classNames={{
-          ...restModalProps.classNames,
-          root: clsx(classes.modalRoot, restModalProps.classNames?.root),
-          content: clsx(classes.modalContent, restModalProps.classNames?.content),
-          body: clsx(classes.modalBody, restModalProps.classNames?.body),
-        }}
+        classNames={mergeModalClassNames(restModalProps.classNames)}
       >
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- 点击空白处关闭只是鼠标与触屏的快捷方式，键盘用户通过 Esc 或关闭按钮关闭查看器 */}
         <div
