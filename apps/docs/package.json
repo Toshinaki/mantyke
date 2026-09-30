@@ -6,7 +6,7 @@
     "dev": "next dev --port 9281",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@mantine/code-highlight": "9.6.3",
@@ -21,11 +21,11 @@
     "@mantyke/spotlight-image": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
-    "@next/mdx": "^15.3.2",
+    "@next/mdx": "^16.3.7",
     "@tabler/icons-react": "^3.44.0",
     "@types/mdx": "^2.0.13",
     "clsx": "^2.1.1",
-    "next": "15.3.2",
+    "next": "16.3.7",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "remark-slug": "^7.0.1",

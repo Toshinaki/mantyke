@@ -1,11 +1,11 @@
 import createMDX from '@next/mdx';
 import fs from 'fs-extra';
-import remarkSlug from 'remark-slug';
 import signale from 'signale';
 
 const withMDX = createMDX({
   options: {
-    remarkPlugins: [remarkSlug],
+    // Turbopack 只接受可序列化的配置，插件以包名字符串的形式传入，由 loader 自行加载
+    remarkPlugins: ['remark-slug'],
   },
 });
 
@@ -26,9 +26,6 @@ const nextConfig = {
   output: 'export',
   basePath: process.env.NODE_ENV === 'production' ? `/${repository}` : undefined,
   pageExtensions: ['ts', 'tsx', 'mdx'],
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 };
 
 export default withMDX(nextConfig);
