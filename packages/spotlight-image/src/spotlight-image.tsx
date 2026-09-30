@@ -13,6 +13,7 @@ import {
   factory,
   Group,
   Image,
+  Loader,
   Modal,
   Tooltip,
   useProps,
@@ -29,6 +30,20 @@ import classes from './spotlight-image.module.css';
 
 export type SpotlightImageStylesNames = 'root';
 export type SpotlightImageCssVariables = {};
+
+/** Texts of the spotlight viewer: accessible names of the buttons and of the loading indicator, and the fullscreen hint */
+export interface SpotlightImageLabels {
+  zoomIn: string;
+  zoomOut: string;
+  resetZoom: string;
+  close: string;
+  enterFullscreen: string;
+  exitFullscreen: string;
+  /** Hint shown when the fullscreen button is pressed on a device without the Fullscreen API */
+  fullscreenUnsupported: string;
+  /** Accessible name of the indicator shown while the image is loading */
+  loading: string;
+}
 
 export interface SpotlightImageProps
   extends
@@ -52,6 +67,9 @@ export interface SpotlightImageProps
 
   /** Modal props for spotlight overlay. Set `closeOnClickOutside` to close the spotlight when the empty area around the image is clicked (`false` by default) */
   modalProps?: Omit<ModalProps, 'opened' | 'onClose' | 'fullScreen' | 'withCloseButton'>;
+
+  /** Texts of the spotlight viewer, English by default. Pass only the ones to replace */
+  labels?: Partial<SpotlightImageLabels>;
 }
 
 export type SpotlightImageFactory = Factory<{
@@ -97,7 +115,16 @@ const PINCH_SENSITIVITY = 0.01;
 const CLICK_MOVE_TOLERANCE = 5;
 /** 不支持全屏时，点击按钮后提示的显示时长 */
 const FULLSCREEN_HINT_DURATION = 2000;
-const FULLSCREEN_UNSUPPORTED_LABEL = 'Fullscreen is not supported on this device';
+const DEFAULT_LABELS: SpotlightImageLabels = {
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  resetZoom: 'Reset zoom',
+  close: 'Close spotlight',
+  enterFullscreen: 'Enter fullscreen',
+  exitFullscreen: 'Exit fullscreen',
+  fullscreenUnsupported: 'Fullscreen is not supported on this device',
+  loading: 'Loading image',
+};
 /**
  * 遮罩背景色的不透明度。通过 `backgroundOpacity` 设置，而不是元素的 `opacity`：
  * Mantine 靠元素的 `opacity` 实现遮罩的淡入淡出，把它固定成某个值会让遮罩直接出现和消失。
@@ -171,15 +198,18 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
     src,
     alt,
     fit,
+    fallbackSrc,
     zoomSpeed = 1.2,
     maxZoom = 5,
     minZoom = 0.25,
     keepImageInView = false,
     modalProps,
+    labels: labelsProp,
     ref,
     ...others
   } = props;
   const { closeOnClickOutside = false, ...restModalProps } = modalProps ?? {};
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
 
   const getStyles = useStyles<SpotlightImageFactory>({
     name: 'SpotlightImage',
@@ -199,7 +229,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
   const [zoom, setZoom] = useState(INITIAL_VIEW.zoom);
   const [position, setPosition] = useState(INITIAL_VIEW.position);
   const [initialZoom, setInitialZoom] = useState(INITIAL_VIEW.initialZoom);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  /** 大图的加载是否已经结束，成功与失败都算。结束之前显示加载指示 */
+  const [isImageSettled, setIsImageSettled] = useState(false);
   /** 缩放与平移的过渡动画是否启用，见下方对应的 effect */
   const [isTransformAnimated, setIsTransformAnimated] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -347,7 +378,19 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
     // Prefer `currentTarget` over `target` — guaranteed to be the element the handler is on
     const fitZoom = calculateInitialZoom(e.currentTarget);
     setView({ initialZoom: fitZoom, zoom: fitZoom, position: { x: 0, y: 0 } });
-    setIsImageLoaded(true);
+    setIsImageSettled(true);
+  };
+
+  /**
+   * 原图加载失败时，Mantine 的 Image 会改用 `fallbackSrc` 再加载一次，此时加载尚未结束。
+   * 没有备用图片，或者备用图片也加载失败，才算结束：停止加载指示，由浏览器显示替代文字。
+   */
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const willLoadFallback =
+      Boolean(fallbackSrc) && e.currentTarget.getAttribute('src') !== fallbackSrc;
+    if (!willLoadFallback) {
+      setIsImageSettled(true);
+    }
   };
 
   /**
@@ -486,7 +529,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
    * 等两帧：第一帧让浏览器先按适配大小完成一次样式计算，第二帧再加上过渡。
    */
   useEffect(() => {
-    if (!isImageLoaded) {
+    if (!isImageSettled) {
       return;
     }
     let secondFrame = 0;
@@ -497,12 +540,13 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
       cancelAnimationFrame(firstFrame);
       cancelAnimationFrame(secondFrame);
     };
-  }, [isImageLoaded]);
+  }, [isImageSettled]);
 
   // 查看状态在打开时重置，而不是关闭时，见 handleClose
   const openSpotlight = () => {
     setView({ ...INITIAL_VIEW, position: { x: 0, y: 0 } });
-    setIsImageLoaded(false);
+    // 没有可加载的图片时不会触发 load 或 error 事件，直接视为加载结束
+    setIsImageSettled(!src && !fallbackSrc);
     setIsTransformAnimated(false);
     setIsOpen(true);
   };
@@ -721,17 +765,17 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
   const fullscreenButton = isFullscreenSupported() ? (
     <ControlButton
       onClick={() => toggleFullscreen()}
-      aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+      aria-label={fullscreen ? labels.exitFullscreen : labels.enterFullscreen}
     >
       {fullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
     </ControlButton>
   ) : (
-    <Tooltip label={FULLSCREEN_UNSUPPORTED_LABEL} opened={isFullscreenHintOpen} position="bottom">
+    <Tooltip label={labels.fullscreenUnsupported} opened={isFullscreenHintOpen} position="bottom">
       <ControlButton
         data-disabled
         aria-disabled
         onClick={handleUnsupportedFullscreenClick}
-        aria-label="Enter fullscreen"
+        aria-label={labels.enterFullscreen}
       >
         <IconMaximize size={18} />
       </ControlButton>
@@ -747,6 +791,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
         src={src}
         alt={alt}
         fit={fit}
+        fallbackSrc={fallbackSrc}
         onClick={handleClickOpen}
         onKeyDown={handleKeyDown}
         role="button"
@@ -767,6 +812,11 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
           ...restModalProps.overlayProps,
         }}
         padding={0}
+        attributes={{
+          ...restModalProps.attributes,
+          // 弹窗没有标题，用图片的替代文字作为可访问名称，屏幕阅读器可以读出正在查看的图片
+          content: { 'aria-label': alt || undefined, ...restModalProps.attributes?.content },
+        }}
         classNames={mergeModalClassNames(restModalProps.classNames)}
       >
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- 点击空白处关闭只是鼠标与触屏的快捷方式，键盘用户通过 Esc 或关闭按钮关闭查看器 */}
@@ -793,22 +843,28 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
               size="lg"
               variant="filled"
               onClick={handleClose}
-              aria-label="Close spotlight"
+              aria-label={labels.close}
               className={classes.controlButton}
             />
           </Group>
 
           <Group className={clsx(classes.controls, classes.bottomControls)}>
-            <ControlButton onClick={handleZoomOut} aria-label="Zoom out">
+            <ControlButton onClick={handleZoomOut} aria-label={labels.zoomOut}>
               <IconZoomOut size={18} />
             </ControlButton>
-            <ControlButton onClick={handleZoomReset} aria-label="Reset zoom">
+            <ControlButton onClick={handleZoomReset} aria-label={labels.resetZoom}>
               <IconZoomReset size={18} />
             </ControlButton>
-            <ControlButton onClick={handleZoomIn} aria-label="Zoom in">
+            <ControlButton onClick={handleZoomIn} aria-label={labels.zoomIn}>
               <IconZoomIn size={18} />
             </ControlButton>
           </Group>
+
+          {!isImageSettled && (
+            <div role="status" aria-label={labels.loading} className={classes.loader}>
+              <Loader className={classes.loaderIcon} />
+            </div>
+          )}
 
           <div className={classes.imageWrapper}>
             <Image
@@ -816,9 +872,11 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
               src={src}
               alt={alt}
               fit="contain"
+              fallbackSrc={fallbackSrc}
               onLoad={handleImageLoad}
+              onError={handleImageError}
               className={clsx(classes.modalImage, {
-                [classes.imageLoaded]: isImageLoaded,
+                [classes.imageSettled]: isImageSettled,
                 [classes.transformAnimated]: isTransformAnimated,
               })}
               style={{

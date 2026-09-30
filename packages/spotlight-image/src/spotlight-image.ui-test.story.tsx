@@ -4,6 +4,7 @@ import { expect, screen, waitFor, within } from 'storybook/test';
 import { fixtureSrc, SPOTLIGHT_FIXTURES, type ImageFixture } from '../../../.storybook/fixtures';
 import {
   click,
+  delayRequests,
   drag,
   nextFrame,
   pointer,
@@ -20,7 +21,11 @@ import {
   type Rect,
 } from '../../../.storybook/test-utils';
 import { VIEWPORTS, type ViewportName } from '../../../.storybook/viewports';
-import { SpotlightImage, type SpotlightImageProps } from './spotlight-image';
+import {
+  SpotlightImage,
+  type SpotlightImageLabels,
+  type SpotlightImageProps,
+} from './spotlight-image';
 
 // 用例定义见 docs/ui-test-plan.md 第 4 节。判定标准来自用户体验，不参照当前实现。
 
@@ -71,6 +76,15 @@ const MIN_FADE_STEPS = 3;
 const FADE_END_RATIO = 0.2;
 /** Mantine Modal 遮罩的静态选择器 */
 const OVERLAY_SELECTOR = '.mantine-Modal-overlay';
+/** 地址中带有这个查询参数的图片请求会被延迟，用于模拟加载缓慢的图片 */
+const SLOW_IMAGE_QUERY = 'slow-image';
+const SLOW_IMAGE_DELAY = 2000;
+/** 加载失败的请求延迟这么久才返回，保证失败之前能观察到加载指示 */
+const FAILED_IMAGE_DELAY = 500;
+/** 查看器打开后，加载指示最迟出现的时间 */
+const LOADER_APPEAR_TIMEOUT = 1000;
+/** 不存在的图片地址 */
+const MISSING_IMAGE_SRC = '/fixtures/missing-image.jpg';
 
 const THUMB_SIZE = { width: 120, height: 80 };
 /** 缩略图前后的空白高度，使页面可以滚动 */
@@ -83,6 +97,7 @@ const LABELS = {
   close: 'Close spotlight',
   enterFullscreen: 'Enter fullscreen',
   exitFullscreen: 'Exit fullscreen',
+  loading: 'Loading image',
 } as const;
 
 /** 「限制拖动范围」配置（SI-54a） */
@@ -1178,5 +1193,152 @@ export const SI75: Story = {
     const before = await viewer.rect();
     const after = await clickButton(viewer, LABELS.zoomIn);
     expect(after.width, '其他功能不受影响').toBeGreaterThan(before.width);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 4.8 加载状态、可访问名称与界面文字
+// ---------------------------------------------------------------------------
+
+function slowSrc(src: string) {
+  return `${src}?${SLOW_IMAGE_QUERY}`;
+}
+
+/** 点击缩略图后立即返回弹窗，不等待图片加载完成 */
+async function openViewerWithoutWaiting(fixture: ImageFixture) {
+  await click(getThumbnail(fixture));
+  return screen.findByRole('dialog');
+}
+
+/** 等待加载指示出现并可见。弹窗有淡入动画，加载指示刚出现时还看不到 */
+async function findLoader(dialog: HTMLElement, name: string) {
+  const options = { timeout: LOADER_APPEAR_TIMEOUT };
+  const loader = await within(dialog).findByRole('status', { name }, options);
+  await waitFor(() => expect(loader, '加载指示').toBeVisible(), options);
+  return loader;
+}
+
+async function waitForLoaderGone(dialog: HTMLElement) {
+  await waitFor(() => expect(within(dialog).queryByRole('status'), '加载指示').toBeNull(), {
+    timeout: IMAGE_LOAD_TIMEOUT,
+  });
+}
+
+export const SI80: Story = {
+  name: 'SI-80 大图加载慢时知道正在加载',
+  args: { fixtures: [small], imageProps: { src: slowSrc(fixtureSrc(small)) } },
+  beforeEach: () => delayRequests(SLOW_IMAGE_QUERY, SLOW_IMAGE_DELAY),
+  play: async () => {
+    const dialog = await openViewerWithoutWaiting(small);
+    await findLoader(dialog, LABELS.loading);
+
+    const viewer = await findViewer();
+    expect(viewer.image, '加载完成后的图片').toBeVisible();
+    await waitForLoaderGone(dialog);
+  },
+};
+
+export const SI81a: Story = {
+  name: 'SI-81a 大图加载失败时显示备用图片',
+  args: {
+    fixtures: [landscape],
+    imageProps: { src: MISSING_IMAGE_SRC, fallbackSrc: fixtureSrc(landscape) },
+  },
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    expect(viewer.image.naturalWidth, '显示的是备用图片').toBe(landscape.width);
+
+    const rect = await viewer.rect();
+    expectFullyVisible(rect, '备用图片');
+    expectCentered(rect, '备用图片');
+    await waitForLoaderGone(viewer.dialog);
+  },
+};
+
+export const SI81b: Story = {
+  name: 'SI-81b 大图加载失败且没有备用图片时，不会一直显示加载中',
+  args: { fixtures: [landscape], imageProps: { src: slowSrc(MISSING_IMAGE_SRC) } },
+  beforeEach: () => delayRequests(SLOW_IMAGE_QUERY, FAILED_IMAGE_DELAY),
+  play: async () => {
+    const dialog = await openViewerWithoutWaiting(landscape);
+    await findLoader(dialog, LABELS.loading);
+    await waitForLoaderGone(dialog);
+    await click(within(dialog).getByRole('button', { name: LABELS.close }));
+    await waitForViewerClosed();
+
+    await openViewerWithoutWaiting(landscape);
+    await press('{Escape}');
+    await waitForViewerClosed();
+  },
+};
+
+export const SI82: Story = {
+  name: 'SI-82 屏幕阅读器能说出正在查看哪张图片',
+  play: async () => {
+    await openViewer(landscape);
+    const dialog = screen.getByRole('dialog', {
+      name: (accessibleName) => accessibleName.includes(landscape.name),
+    });
+    expect(dialog, '可访问名称包含 alt 的弹窗').toBeVisible();
+  },
+};
+
+const ZH_LABELS: SpotlightImageLabels = {
+  zoomIn: '放大',
+  zoomOut: '缩小',
+  resetZoom: '重置缩放',
+  close: '关闭',
+  enterFullscreen: '进入全屏',
+  exitFullscreen: '退出全屏',
+  fullscreenUnsupported: '当前设备不支持全屏',
+  loading: '图片加载中',
+};
+
+export const SI83a: Story = {
+  name: 'SI-83a 界面文字可以换成使用者的语言',
+  args: {
+    fixtures: [small],
+    imageProps: { src: slowSrc(fixtureSrc(small)), labels: ZH_LABELS },
+  },
+  beforeEach: () => delayRequests(SLOW_IMAGE_QUERY, SLOW_IMAGE_DELAY),
+  play: async () => {
+    const dialog = await openViewerWithoutWaiting(small);
+    await findLoader(dialog, ZH_LABELS.loading);
+
+    const viewer = await findViewer();
+    [ZH_LABELS.zoomIn, ZH_LABELS.zoomOut, ZH_LABELS.resetZoom, ZH_LABELS.close].forEach((name) =>
+      expect(viewer.button(name), `「${name}」按钮`).toBeVisible()
+    );
+
+    await click(viewer.button(ZH_LABELS.enterFullscreen));
+    await waitFor(() => expect(viewer.button(ZH_LABELS.exitFullscreen)).toBeVisible());
+    await click(viewer.button(ZH_LABELS.exitFullscreen));
+    await waitFor(() => expect(document.fullscreenElement).toBeNull());
+    await click(viewer.button(ZH_LABELS.close));
+    await waitForViewerClosed();
+
+    const restoreFullscreenSupport = simulateNoFullscreenSupport();
+    try {
+      const reopened = await openViewerWithoutWaiting(small);
+      await click(within(reopened).getByRole('button', { name: ZH_LABELS.enterFullscreen }), {
+        force: true,
+      });
+      const tooltip = await screen.findByRole('tooltip');
+      expect(tooltip.textContent, '不支持全屏的提示').toBe(ZH_LABELS.fullscreenUnsupported);
+    } finally {
+      restoreFullscreenSupport();
+    }
+  },
+};
+
+export const SI83b: Story = {
+  name: 'SI-83b 只替换部分文字',
+  args: { imageProps: { labels: { close: ZH_LABELS.close } } },
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    expect(viewer.button(ZH_LABELS.close), '关闭按钮使用传入的文字').toBeVisible();
+    [LABELS.zoomIn, LABELS.zoomOut, LABELS.reset, LABELS.enterFullscreen].forEach((name) =>
+      expect(viewer.button(name), `「${name}」按钮保持默认文字`).toBeVisible()
+    );
   },
 };

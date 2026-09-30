@@ -2,7 +2,11 @@ import { userEvent as syntheticUserEvent } from 'storybook/test';
 import type { PointerAction, WheelModifier } from './browser-commands.types';
 
 interface BrowserTestApi {
-  commands: { pointer: (actions: PointerAction[]) => Promise<void> };
+  commands: {
+    pointer: (actions: PointerAction[]) => Promise<void>;
+    delayRequests: (urlPart: string, delayMs: number) => Promise<void>;
+    clearRequestDelays: () => Promise<void>;
+  };
   page: { viewport: (width: number, height: number) => Promise<void> };
   userEvent: {
     click: (element: Element, options?: ClickOptions) => Promise<void>;
@@ -126,6 +130,19 @@ export async function setViewport(width: number, height: number) {
     await api.page.viewport(width, height);
     await waitFrames(2);
   }
+}
+
+/**
+ * 让地址包含 urlPart 的请求延迟 delayMs 毫秒后再发出，返回取消延迟的函数。
+ * 只在 vitest 中生效；在 Storybook 界面中请使用开发者工具的网络限速。
+ */
+export async function delayRequests(urlPart: string, delayMs: number) {
+  const api = getApi();
+  if (!api) {
+    return async () => {};
+  }
+  await api.commands.delayRequests(urlPart, delayMs);
+  return () => api.commands.clearRequestDelays();
 }
 
 export async function click(element: Element, options?: ClickOptions) {

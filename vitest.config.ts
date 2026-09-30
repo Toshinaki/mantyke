@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { pointer } from './.storybook/browser-commands';
+import { clearRequestDelays, delayRequests, pointer } from './.storybook/browser-commands';
 import { VIEWPORTS } from './.storybook/viewports';
 import viteConfig from './vite.config';
 
@@ -33,7 +33,7 @@ export default mergeConfig(
               // 使用完整版 Chromium 的新 headless 模式，全屏等行为与真实的 Chrome 一致
               provider: playwright({ launchOptions: { channel: 'chromium' } }),
               instances: [{ browser: 'chromium', viewport: VIEWPORTS.desktop }],
-              commands: { pointer },
+              commands: { pointer, delayRequests, clearRequestDelays },
               // 失败时的截图只用于排查，不提交；L3 的基准截图保存在各 story 旁的 __screenshots__ 中
               screenshotDirectory: '.vitest/failure-screenshots',
             },
