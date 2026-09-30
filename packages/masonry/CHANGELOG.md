@@ -1,5 +1,11 @@
 # @mantyke/masonry
 
+## 0.1.2
+
+### Patch Changes
+
+- 4999b33: Link the README to the package's page on the documentation site.
+
 ## 0.1.1
 
 ### Patch Changes
