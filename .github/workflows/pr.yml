@@ -112,8 +112,6 @@ jobs:
     name: UI Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # 已知缺陷修复之前，UI 测试的结果只作参考，不拦截合并
-    continue-on-error: true
 
     steps:
       - name: Checkout
