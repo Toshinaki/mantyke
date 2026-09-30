@@ -442,11 +442,13 @@ master 推送 ──→ ci.yml（全量 CI）──→ 成功后触发 ──┬
        运行 `pnpm release`（即 `changeset publish`）
        只发布 npm 上还不存在的版本；没有新版本时不发布任何包
 3. 如果有包发布成功 →
-   为每个发布的包创建 GitHub Release
+   changesets/action 为每个发布的包创建 GitHub Release
    标签格式：{包名}@{版本号}
 ```
 
-> `changeset publish` 从 2.31 起会拒绝不认识的参数，`publish` 命令中不要再添加 `--access`、`--provenance` 之类的参数。
+> `changeset publish` 会拒绝不认识的参数，发布命令中不要添加 `--access`、`--provenance` 之类的参数。
+>
+> `changesets/action` v2 需要 `@changesets/cli` v3。令牌通过 `github-token` 输入传入，不再读取环境变量 `GITHUB_TOKEN`；输入和输出的名称都是短横线形式，如 `publish-script`、`published-packages`。
 
 ### docs.yml：部署文档站
 

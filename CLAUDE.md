@@ -70,7 +70,7 @@ pnpm run storybook
 
 - **Required checks**: the `Merge Protection` ruleset on `master` requires `Validate PR` and `UI Tests` (both from `pr.yml`) to pass.
 - **Versioning**: Changesets. Merging a PR with changesets makes the Release workflow open a "Version Packages" PR; merging that PR publishes to npm.
-- **Release workflow** (`release.yml`): runs after master CI succeeds. It creates the Version Packages PR with a GitHub App token (secrets `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY`; the App needs Contents, Pull requests and Workflows read/write) so that PR checks run on it. Publishing uses npm trusted publishing (OIDC) with provenance via `NPM_CONFIG_PROVENANCE`. Do not add flags to `changeset publish`; since 2.31 it rejects unknown flags.
+- **Release workflow** (`release.yml`): runs after master CI succeeds. It creates the Version Packages PR with a GitHub App token (secrets `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY`; the App needs Contents, Pull requests and Workflows read/write) so that PR checks run on it. Publishing uses npm trusted publishing (OIDC) with provenance via `NPM_CONFIG_PROVENANCE`. Do not add flags to `changeset publish`; it rejects unknown flags. `changesets/action` v2 needs `@changesets/cli` v3, takes the token via its `github-token` input (not the `GITHUB_TOKEN` env), uses kebab-case inputs/outputs, and creates the GitHub Releases itself.
 - **Major updates**: dependency major bumps and major releases must be confirmed on real devices by the maintainer before merging or publishing.
 
 ## Adding a New Package
