@@ -61,6 +61,16 @@ const TOUCH_STEPS = 10;
 const SETTLE_DELAY = 500;
 /** 等待查看器中的图片加载并淡入完成的上限 */
 const IMAGE_LOAD_TIMEOUT = 5000;
+/** 透明度高于该值时视为用户已经能看到图片 */
+const VISIBLE_OPACITY = 0.05;
+/** 打开与关闭过程中，图片相对查看区域的大小和位置允许的变化比例 */
+const TRANSITION_TOLERANCE = 0.02;
+/** 暗色背景淡出时至少要经过的不同透明度个数，少于这个数视为突然消失 */
+const MIN_FADE_STEPS = 3;
+/** 暗色背景消失前，透明度应降到打开时的这个比例以下 */
+const FADE_END_RATIO = 0.2;
+/** Mantine Modal 遮罩的静态选择器 */
+const OVERLAY_SELECTOR = '.mantine-Modal-overlay';
 
 const THUMB_SIZE = { width: 120, height: 80 };
 /** 缩略图前后的空白高度，使页面可以滚动 */
@@ -165,6 +175,48 @@ function viewCenter(): Point {
 /** 视口中某一点对应图片上的相对位置（0 到 1） */
 function imagePosition(rect: Rect, point: Point) {
   return { u: (point.x - rect.left) / rect.width, v: (point.y - rect.top) / rect.height };
+}
+
+interface RelativeBox {
+  width: number;
+  centerX: number;
+  centerY: number;
+}
+
+/**
+ * 图片相对查看区域的大小和中心位置（以查看区域的宽度为单位）。
+ * 用相对值比较，可以排除弹窗自身进出场动画（整体平移或缩放）的影响，只反映图片自己的变化。
+ */
+function relativeBox(image: HTMLElement): RelativeBox {
+  const box = rectOf(image);
+  const area = rectOf(image.parentElement!);
+  return {
+    width: box.width / area.width,
+    centerX: (box.centerX - area.centerX) / area.width,
+    centerY: (box.centerY - area.centerY) / area.width,
+  };
+}
+
+/** 逐帧读取查看器中的图片，直到 stop 返回 true。只记录用户已经能看到图片的帧 */
+function sampleVisibleImage(getImage: () => HTMLElement | null | undefined) {
+  const samples: RelativeBox[] = [];
+  let isStopped = false;
+  const done = (async () => {
+    while (!isStopped) {
+      const image = getImage();
+      if (image?.isConnected && Number(getComputedStyle(image).opacity) > VISIBLE_OPACITY) {
+        samples.push(relativeBox(image));
+      }
+      await nextFrame();
+    }
+    return samples;
+  })();
+  return {
+    stop: () => {
+      isStopped = true;
+      return done;
+    },
+  };
 }
 
 function cursorAt(point: Point) {
@@ -431,6 +483,79 @@ export const SI11: Story = {
 
     viewer = await openViewer(portrait);
     expectSameRect(await viewer.rect(), portraitInitial, '第二张图片');
+  },
+};
+
+export const SI12: Story = {
+  name: 'SI-12 打开时图片直接以适配大小出现',
+  play: async () => {
+    const sampling = sampleVisibleImage(() => screen.queryByRole('dialog')?.querySelector('img'));
+    const viewer = await openViewer(landscape);
+    const samples = await sampling.stop();
+    const finalWidth = relativeBox(viewer.image).width;
+
+    expect(samples.length, '打开过程中采集到的帧数').toBeGreaterThan(0);
+    expect(
+      Math.max(...samples.map((sample) => sample.width)),
+      '图片可见期间的最大相对宽度'
+    ).toBeLessThanOrEqual(finalWidth * (1 + TRANSITION_TOLERANCE));
+  },
+};
+
+export const SI13: Story = {
+  name: 'SI-13 关闭时图片不会先放大再消失',
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    await clickButton(viewer, LABELS.zoomIn, 2);
+    const before = relativeBox(viewer.image);
+
+    const sampling = sampleVisibleImage(() => viewer.image);
+    await click(viewer.button(LABELS.close));
+    await waitForViewerClosed();
+    const samples = await sampling.stop();
+
+    expect(samples.length, '关闭过程中采集到的帧数').toBeGreaterThan(0);
+    samples.forEach((sample, index) => {
+      const tolerance = before.width * TRANSITION_TOLERANCE;
+      expectClose(sample.width, before.width, tolerance, `第 ${index + 1} 帧的相对宽度`);
+      expectClose(sample.centerX, before.centerX, tolerance, `第 ${index + 1} 帧的水平位置`);
+      expectClose(sample.centerY, before.centerY, tolerance, `第 ${index + 1} 帧的垂直位置`);
+    });
+  },
+};
+
+export const SI14: Story = {
+  name: 'SI-14 关闭时暗色背景逐渐淡出',
+  play: async () => {
+    const viewer = await openViewer(landscape);
+    const readOpacity = () => {
+      const overlay = document.querySelector(OVERLAY_SELECTOR);
+      return overlay ? Number(getComputedStyle(overlay).opacity) : null;
+    };
+    const opened = readOpacity();
+    expect(opened, '打开时暗色背景存在').not.toBeNull();
+
+    const samples: number[] = [];
+    let isStopped = false;
+    const sampling = (async () => {
+      while (!isStopped) {
+        const opacity = readOpacity();
+        if (opacity !== null) {
+          samples.push(opacity);
+        }
+        await nextFrame();
+      }
+    })();
+    await click(viewer.button(LABELS.close));
+    await waitForViewerClosed();
+    isStopped = true;
+    await sampling;
+
+    const distinct = new Set(samples.map((value) => value.toFixed(2)));
+    expect(distinct.size, '淡出过程中经过的不同透明度个数').toBeGreaterThanOrEqual(MIN_FADE_STEPS);
+    expect(samples[samples.length - 1], '消失前的透明度').toBeLessThanOrEqual(
+      opened! * FADE_END_RATIO
+    );
   },
 };
 

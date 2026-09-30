@@ -98,6 +98,12 @@ const CLICK_MOVE_TOLERANCE = 5;
 /** 不支持全屏时，点击按钮后提示的显示时长 */
 const FULLSCREEN_HINT_DURATION = 2000;
 const FULLSCREEN_UNSUPPORTED_LABEL = 'Fullscreen is not supported on this device';
+/**
+ * 遮罩背景色的不透明度。通过 `backgroundOpacity` 设置，而不是元素的 `opacity`：
+ * Mantine 靠元素的 `opacity` 实现遮罩的淡入淡出，把它固定成某个值会让遮罩直接出现和消失。
+ */
+const OVERLAY_BACKGROUND_OPACITY = 0.55;
+const OVERLAY_BLUR = 2;
 
 /**
  * Calculate the initial zoom level to fit image within viewport
@@ -194,6 +200,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
   const [position, setPosition] = useState(INITIAL_VIEW.position);
   const [initialZoom, setInitialZoom] = useState(INITIAL_VIEW.initialZoom);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  /** 缩放与平移的过渡动画是否启用，见下方对应的 effect */
+  const [isTransformAnimated, setIsTransformAnimated] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   /** 手指是否在查看区域内，触摸期间关闭位移过渡，让图片直接跟随手指 */
   const [isTouching, setIsTouching] = useState(false);
@@ -472,10 +480,31 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
 
   // ── Open / Close ───────────────────────────────────────────────────────────
 
+  /**
+   * 图片以适配大小显示出来之后，才启用缩放与平移的过渡动画。
+   * 如果在加载完成的同一帧就启用，图片会带着过渡从原始尺寸缩小到适配大小，用户能看到这个过程。
+   * 等两帧：第一帧让浏览器先按适配大小完成一次样式计算，第二帧再加上过渡。
+   */
+  useEffect(() => {
+    if (!isImageLoaded) {
+      return;
+    }
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => setIsTransformAnimated(true));
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [isImageLoaded]);
+
+  // 查看状态在打开时重置，而不是关闭时，见 handleClose
   const openSpotlight = () => {
-    setIsOpen(true);
+    setView({ ...INITIAL_VIEW, position: { x: 0, y: 0 } });
     setIsImageLoaded(false);
-    setView({ position: { x: 0, y: 0 } });
+    setIsTransformAnimated(false);
+    setIsOpen(true);
   };
 
   /** Click handler for the thumbnail image */
@@ -498,10 +527,13 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
     }
   };
 
+  /**
+   * 关闭时保留当前的缩放和位置：弹窗还要播放退出动画，
+   * 此时重置会让图片在消失前先变回原始尺寸。状态留到下次打开时重置。
+   */
   const handleClose = () => {
+    setView({});
     setIsOpen(false);
-    setView({ ...INITIAL_VIEW, position: { x: 0, y: 0 } });
-    setIsImageLoaded(false);
   };
 
   // ── Modal keyboard shortcuts ───────────────────────────────────────────────
@@ -730,8 +762,8 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
         fullScreen
         withCloseButton={false}
         overlayProps={{
-          opacity: 0.9,
-          blur: 2,
+          backgroundOpacity: OVERLAY_BACKGROUND_OPACITY,
+          blur: OVERLAY_BLUR,
           ...restModalProps.overlayProps,
         }}
         padding={0}
@@ -787,6 +819,7 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
               onLoad={handleImageLoad}
               className={clsx(classes.modalImage, {
                 [classes.imageLoaded]: isImageLoaded,
+                [classes.transformAnimated]: isTransformAnimated,
               })}
               style={{
                 transform: `scale(${zoom}) translate(${position.x / zoom}px, ${
