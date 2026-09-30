@@ -1,5 +1,6 @@
 import type { BrowserCommand, BrowserCommandContext } from 'vitest/node';
 import type { PointerAction } from './browser-commands.types';
+import type { ViewportSize } from './viewports';
 
 type PlaywrightPage = BrowserCommandContext['page'];
 type RouteMatcher = Parameters<PlaywrightPage['route']>[0];
@@ -80,6 +81,27 @@ export const delayRequests: BrowserCommand<[urlPart: string, delayMs: number]> =
   };
   await ctx.page.route(matcher, handler);
   delayedRoutes.push({ matcher, handler });
+};
+
+/**
+ * 当前运行是否进行截图对比。基准截图只在 CI（Linux）中生成，不同系统的字体渲染不同，
+ * 本地默认不对比；设置环境变量 UI_SCREENSHOTS=local 后，与本机生成的截图对比。
+ */
+export const isScreenshotComparisonEnabled: BrowserCommand<[]> = async () =>
+  Boolean(process.env.CI) || process.env.UI_SCREENSHOTS === 'local';
+
+/**
+ * 调整浏览器窗口（vitest 编排页面）的尺寸，返回调整前的尺寸。
+ * 测试页面是编排页面中的 iframe，窗口放不下时 vitest 会把它整体缩小显示，截图也随之缩小。
+ * 截图前把窗口调到不小于测试视口，截图才是 1:1 的画面。
+ */
+export const resizeBrowserWindow: BrowserCommand<[size: ViewportSize]> = async (ctx, size) => {
+  assertPlaywright(ctx, 'resizeBrowserWindow');
+  const previous =
+    ctx.page.viewportSize() ??
+    (await ctx.page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight })));
+  await ctx.page.setViewportSize(size);
+  return previous;
 };
 
 /** 取消 delayRequests 注册的全部延迟 */

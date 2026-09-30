@@ -32,6 +32,9 @@ pnpm nx test @mantyke/spotlight-image
 # Run UI tests (Storybook stories in real Chromium, not part of `pnpm test`)
 pnpm test:ui
 
+# Run UI tests and compare screenshots against local baselines (not committed)
+UI_SCREENSHOTS=local pnpm test:ui
+
 # Regenerate UI test fixture images after editing .storybook/fixtures.ts
 pnpm fixtures:generate
 
@@ -60,7 +63,7 @@ pnpm run storybook
 - **CSS Modules**: Components use `.module.css` files, processed by PostCSS with `postcss-preset-mantine`. Class names are scoped via `hash-css-selector`.
 - **Testing**: Jest with `jsdom` environment, `esbuild-jest` transform, CSS mocked via `identity-obj-proxy`. Tests use `@testing-library/react` and `@mantine-tests/core`. Test files are co-located: `<component>.test.tsx`.
 - **Stories**: Co-located Storybook stories: `<component>.story.tsx`, with controls and local fixture images.
-- **UI tests**: `<component>.ui-test.story.tsx` stories with `play` functions, run by `@storybook/addon-vitest` in Chromium (`vitest.config.ts`). Cases are designed from user experience in `docs/ui-test-plan.md`; when the code disagrees with a case, treat it as a likely bug instead of adjusting the case. Shared helpers and fixture specs live in `.storybook/`. `vitest.config.ts` is excluded from Nx target inference (`nx.json`) so UI tests stay out of `nx run-many -t test`.
+- **UI tests**: `<component>.ui-test.story.tsx` stories with `play` functions, run by `@storybook/addon-vitest` in Chromium (`vitest.config.ts`). Cases are designed from user experience in `docs/ui-test-plan.md`; when the code disagrees with a case, treat it as a likely bug instead of adjusting the case. Shared helpers and fixture specs live in `.storybook/`. Visual regression stories (`SI-V*`, `MA-V*`) call `matchScreenshot`; baselines live in `__screenshots__/` next to the stories and are only generated in CI (Linux), so the comparison is skipped locally unless `UI_SCREENSHOTS=local` is set. To create or update baselines, add the `update-screenshots` label to the PR: the `Update Screenshots` workflow regenerates them and commits to the PR branch. `vitest.config.ts` is excluded from Nx target inference (`nx.json`) so UI tests stay out of `nx run-many -t test`.
 - **Docs site**: `apps/docs/data.ts` lists the packages; `/` is the overview, each package has `pages/<slug>.tsx` + `<slug>.mdx`, demos in `demos/`, Styles API data in `styles-api/`. Props tables come from `scripts/docgen.ts`.
 - **Peer dependencies**: Packages depend on `@mantine/core`, `@mantine/hooks`, `@tabler/icons-react`, `clsx`, `react`, `react-dom` as peers.
 - **Dependency consistency**: syncpack also checks `pnpm.overrides`; `react` / `react-dom` are pinned globally there to avoid duplicate React copies in tests.

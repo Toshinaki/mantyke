@@ -6,3 +6,8 @@ export const VIEWPORTS = {
 } as const;
 
 export type ViewportName = keyof typeof VIEWPORTS;
+
+export interface ViewportSize {
+  width: number;
+  height: number;
+}

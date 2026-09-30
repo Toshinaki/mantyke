@@ -18,6 +18,7 @@
     "stylelint": "pnpm nx run-many -t stylelint",
     "jest": "pnpm nx run-many -t test",
     "test:ui": "vitest run --project=storybook",
+    "test:ui:update": "vitest run --project=storybook --update",
     "test": "pnpm syncpack && pnpm prettier:check && pnpm typecheck && pnpm lint && pnpm jest",
     "docgen": "tsx scripts/docgen",
     "fixtures:generate": "tsx scripts/generate-test-fixtures.ts",

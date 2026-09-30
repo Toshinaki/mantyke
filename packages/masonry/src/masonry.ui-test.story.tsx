@@ -5,6 +5,7 @@ import type { MantineSpacing } from '@mantine/core';
 import { fixtureSrc, MASONRY_FIXTURES, type ImageFixture } from '../../../.storybook/fixtures';
 import {
   click,
+  matchScreenshot,
   nextFrame,
   press,
   rectOf,
@@ -1166,3 +1167,64 @@ export const MA49: Story = {
     });
   },
 };
+
+// ---------------------------------------------------------------------------
+// 5.4 视觉回归（L3）
+// ---------------------------------------------------------------------------
+
+const SCREENSHOT_VIEWPORTS: ViewportName[] = ['desktop', 'tablet', 'mobile'];
+
+/** 等待布局稳定后截取组件。截图只包含组件本身，不含场景上方的操作按钮 */
+async function expectLayoutScreenshot(name: string) {
+  const root = getRoot();
+  await settle(root);
+  await matchScreenshot(root, name);
+}
+
+export const MAV01: Story = {
+  name: 'MA-V01 masonry 变体',
+  args: { variant: 'masonry' },
+  play: () => expectLayoutScreenshot('MA-V01-desktop'),
+};
+
+export const MAV02: Story = {
+  name: 'MA-V02 columns 变体',
+  args: { variant: 'columns' },
+  play: () => expectLayoutScreenshot('MA-V02-desktop'),
+};
+
+export const MAV03: Story = {
+  name: 'MA-V03 rows 变体',
+  args: { variant: 'rows' },
+  play: () => expectLayoutScreenshot('MA-V03-desktop'),
+};
+
+function responsiveScreenshotStory(variant: Variant): Story {
+  return {
+    name: `MA-V04 响应式配置（${VARIANT_LABELS[variant]}）`,
+    args: { ...RESPONSIVE_ARGS, variant },
+    play: async () => {
+      for (const viewportName of SCREENSHOT_VIEWPORTS) {
+        const { width, height } = VIEWPORTS[viewportName];
+        await setViewport(width, height);
+        await expectLayoutScreenshot(`MA-V04-${variant}-${viewportName}`);
+      }
+    },
+  };
+}
+export const MAV04Masonry = responsiveScreenshotStory('masonry');
+export const MAV04Columns = responsiveScreenshotStory('columns');
+
+export const MAV05: Story = {
+  name: 'MA-V05 masonry 变体，文字卡片',
+  args: { variant: 'masonry', content: 'cards' },
+  play: () => expectLayoutScreenshot('MA-V05-desktop'),
+};
+
+const maV06 = variantStories('MA-V06', '间距为 0', {
+  args: { gap: 0 },
+  play: (variant) => expectLayoutScreenshot(`MA-V06-${variant}-desktop`),
+});
+export const MAV06Masonry = maV06.masonry;
+export const MAV06Columns = maV06.columns;
+export const MAV06Rows = maV06.rows;
