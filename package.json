@@ -40,7 +40,7 @@
     "@nx/jest": "22.5.4",
     "@nx/next": "22.5.4",
     "@nx/rollup": "22.5.4",
-    "@nx/storybook": "22.5.4",
+    "@nx/storybook": "22.6.5",
     "@nx/vite": "22.5.4",
     "@nx/web": "22.5.4",
     "@rollup/plugin-node-resolve": "^16.0.3",
