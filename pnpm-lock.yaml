@@ -168,8 +168,8 @@ importers:
         specifier: 2.7.0
         version: 2.7.0
       mantine-docgen-script:
-        specifier: ^1.5.0
-        version: 1.6.0(typescript@5.9.3)
+        specifier: ^2.0.0
+        version: 2.0.0(typescript@5.9.3)
       nx:
         specifier: 22.5.4
         version: 22.5.4
@@ -4588,6 +4588,10 @@ packages:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
+  chalk@6.0.1:
+    resolution: {integrity: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==}
+    engines: {node: '>=22'}
+
   char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
     engines: {node: '>=10'}
@@ -7110,9 +7114,9 @@ packages:
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
-  mantine-docgen-script@1.6.0:
-    resolution: {integrity: sha512-OhnThbQ+Ul8DtgBh82HE00+8k/N/wpmd44B4op6iN3jpNT2Kqy0Twi7eoLzYvtiGajIr38MIvgMxC8AZAQZeCw==}
-    engines: {node: '>=16.6.0'}
+  mantine-docgen-script@2.0.0:
+    resolution: {integrity: sha512-o5HEm9jamG7mIz1i5FloL1eJrG+RfMVTDqeuOtNLKvsfBh1HSeNu3W/v+t/IuGcFczeifzz5tZcctvD3NfMl1A==}
+    engines: {node: '>=22.12.0'}
 
   map-cache@0.2.2:
     resolution: {integrity: sha512-8y/eV9QQZCiyn1SprXSrCmqJN0yNRATe+PO8ztwqrvrbdRLA3eYJF0yaR0YayLWkMbsQSKWS9N2gPcGEc4UsZg==}
@@ -15396,6 +15400,8 @@ snapshots:
 
   chalk@5.6.2: {}
 
+  chalk@6.0.1: {}
+
   char-regex@1.0.2: {}
 
   character-entities-html4@2.1.0: {}
@@ -18631,9 +18637,9 @@ snapshots:
     dependencies:
       tmpl: 1.0.5
 
-  mantine-docgen-script@1.6.0(typescript@5.9.3):
+  mantine-docgen-script@2.0.0(typescript@5.9.3):
     dependencies:
-      chalk: 5.6.2
+      chalk: 6.0.1
       fs-extra: 11.4.1
       react-docgen-typescript: 2.4.0(typescript@5.9.3)
     transitivePeerDependencies:
