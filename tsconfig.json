@@ -8,6 +8,7 @@
     "moduleResolution": "bundler",
     "jsx": "react",
     "skipLibCheck": true,
+    "strict": false,
     "outDir": "temp",
     "declaration": true,
     "declarationMap": false,

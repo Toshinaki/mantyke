@@ -84,6 +84,14 @@ updates:
       - dependency-name: 'node'
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # eslint-config-mantine 只支持 ESLint 9，等它支持 ESLint 10 后再升级
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      # typescript-eslint 要求 TypeScript < 6.1，TypeScript 7 暂不升级
+      - dependency-name: 'typescript'
+        versions: ['>=7']
 
   # GitHub Actions updates
   - package-ecosystem: 'github-actions'

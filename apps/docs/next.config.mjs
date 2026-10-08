@@ -5,7 +5,7 @@ import signale from 'signale';
 const withMDX = createMDX({
   options: {
     // Turbopack 只接受可序列化的配置，插件以包名字符串的形式传入，由 loader 自行加载
-    remarkPlugins: ['remark-slug'],
+    rehypePlugins: ['rehype-slug'],
   },
 });
 
