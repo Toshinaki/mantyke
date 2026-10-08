@@ -41,7 +41,7 @@
     "@nx/next": "22.5.4",
     "@nx/rollup": "22.5.4",
     "@nx/storybook": "22.5.4",
-    "@nx/vite": "22.5.4",
+    "@nx/vite": "23.2.1",
     "@nx/web": "22.5.4",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
