@@ -28,7 +28,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "remark-slug": "^7.0.1",
-    "shiki": "^3.22.0",
+    "shiki": "^4.5.0",
     "type-fest": "^5.6.0"
   },
   "devDependencies": {
