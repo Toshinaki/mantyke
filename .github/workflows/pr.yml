@@ -77,7 +77,8 @@ jobs:
           retention-days: 7
 
       - name: Build docs
-        run: pnpm nx build mantyke-docs
+        # 包已在 Build packages 步骤构建；跳过依赖的 build target，避免并行构建争用 temp/ 目录
+        run: pnpm nx build mantyke-docs --exclude-task-dependencies
 
       - name: Check for changesets
         id: changeset-check
