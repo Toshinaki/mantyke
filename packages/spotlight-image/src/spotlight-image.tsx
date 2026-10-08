@@ -205,6 +205,9 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
     keepImageInView = false,
     modalProps,
     labels: labelsProp,
+    onKeyDown: onKeyDownProp,
+    role = 'button',
+    tabIndex = 0,
     ref,
     ...others
   } = props;
@@ -793,9 +796,9 @@ export const SpotlightImage = factory<SpotlightImageFactory>((_props) => {
         fit={fit}
         fallbackSrc={fallbackSrc}
         onClick={handleClickOpen}
-        onKeyDown={handleKeyDown}
-        role="button"
-        tabIndex={0}
+        onKeyDown={onKeyDownProp ?? handleKeyDown}
+        role={role}
+        tabIndex={tabIndex}
         {...others}
         {...getStyles('root')}
       />
