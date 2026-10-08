@@ -1,6 +1,5 @@
 /** @type {import("syncpack").RcFile} */
 const config = {
-  dependencyTypes: ['dev', 'prod', 'pnpmOverrides'],
   source: ['package.json', 'packages/*/package.json', 'apps/docs/package.json'],
   sortFirst: [
     'name',
