@@ -21,6 +21,12 @@ updates:
       - 'automated'
     # Group dependency updates to reduce PR noise
     groups:
+      # Storybook 各包要求版本完全一致，所有更新（包括 major）放在同一个 PR 里。
+      # Dependabot 把依赖归入第一个匹配的分组，因此这个分组必须排在最前面
+      storybook:
+        patterns:
+          - 'storybook'
+          - '@storybook/*'
       # Group all non-major updates together
       minor-and-patch:
         patterns:

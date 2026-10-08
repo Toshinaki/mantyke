@@ -166,3 +166,8 @@ vitest.config.*.timestamp*
 
 # generate-dts working directory (left behind when a build fails midway)
 temp/
+
+.claude/worktrees
+.nx/polygraph
+.nx/self-healing
+.nx/migrate-runs
