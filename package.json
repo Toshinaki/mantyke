@@ -78,7 +78,7 @@
     "hash-css-selector": "^1.1.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.3.0",
-    "jest-axe": "^10.0.0",
+    "jest-axe": "^11.0.0",
     "jest-environment-jsdom": "^30.3.0",
     "jiti": "2.7.0",
     "mantine-docgen-script": "^2.0.0",
