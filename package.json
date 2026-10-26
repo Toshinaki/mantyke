@@ -38,7 +38,7 @@
     "@mantine/hooks": "9.7.3",
     "@nx/eslint": "23.3.0",
     "@nx/jest": "23.3.0",
-    "@nx/next": "23.3.0",
+    "@nx/next": "24.0.0",
     "@nx/rollup": "23.3.0",
     "@nx/storybook": "23.3.0",
     "@nx/vite": "23.3.0",
