@@ -81,7 +81,7 @@
     "jest-axe": "^11.0.0",
     "jest-environment-jsdom": "^30.3.0",
     "jiti": "2.7.0",
-    "mantine-docgen-script": "^2.0.0",
+    "mantine-docgen-script": "^3.0.0",
     "nx": "23.3.0",
     "playwright": "^1.64.1",
     "postcss": "^8.5.30",
