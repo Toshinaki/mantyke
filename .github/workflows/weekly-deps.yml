@@ -9,9 +9,6 @@ on:
     # 每周一 09:17（UTC）。避开整点：整点时 GitHub 的定时任务最拥挤，可能被延后或丢弃
     - cron: '17 9 * * 1'
   workflow_dispatch:
-  # 临时：合并前在 PR 分支上试运行一次，验证后撤销这个提交
-  push:
-    branches: [ci/weekly-deps]
 
 permissions:
   contents: read
