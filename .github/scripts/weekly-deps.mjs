@@ -8,7 +8,7 @@
 // 或 changed=false 写进环境变量 GITHUB_OUTPUT 指向的步骤输出文件，
 // 工作流的后续步骤据此决定是否更新锁文件和推送。
 // 本地试运行时可以用环境变量 NCU_BIN 指定一个 JS 文件代替全局的 ncu 命令，脚本用 node 运行它，参数与 ncu 相同。
-// 可以是 npm-check-updates 包自己的 package.json 中 bin 字段指向的文件，也可以是模拟 ncu 的脚本：
+// 可以是 npm-check-updates 包的命令行入口文件（该包自己的 package.json 中 bin 字段指向的文件），也可以是模拟 ncu 的脚本：
 // 它要像 ncu 一样向标准输出打印 { 包名: 新的版本范围 } 形式的 JSON，并在收到 --upgrade 时改写 --packageFile 指定的文件。
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -57,7 +57,7 @@ function runNcu(args) {
     process.stderr.write(result.stderr ?? '');
     throw new Error(`ncu 运行失败：ncu ${args.join(' ')}`);
   }
-  // JSON 模式下 ncu 只输出 JSON；保险起见只取第一个 { 到最后一个 } 之间的内容
+  // 传了 --jsonUpgraded 时 ncu 只输出 JSON；保险起见只取第一个 { 到最后一个 } 之间的内容
   const start = result.stdout.indexOf('{');
   const end = result.stdout.lastIndexOf('}');
   return start === -1 ? {} : JSON.parse(result.stdout.slice(start, end + 1));
@@ -72,7 +72,10 @@ function collectSpecs(packageJson) {
   return Object.assign({}, ...SECTIONS.map((section) => packageJson[section] ?? {}));
 }
 
-/** 从版本范围（如 ^10.6.2、9.7.3、^11）中取出版本号，返回 { text, parts }，缺的段按 0 计 */
+/**
+ * 从版本范围（如 ^10.6.2、9.7.3、^11）中取出版本号。
+ * 返回 { text, parts }：text 是取出的版本号文本（如 10.6.2、11），parts 是三段数字（如 [11, 0, 0]，缺的段按 0 计）
+ */
 function parseVersion(spec) {
   const match = /(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(spec);
   if (!match) {
@@ -214,8 +217,8 @@ const lines = [
 ];
 if (upgradedRows.length > 0) {
   lines.push(
-    '两列版本范围都是 `package.json` 中的写法。`^` 表示允许不破坏兼容的更新版本：`^1.2.3` 允许 1.x 中不低于 1.2.3 的版本，`^0.28.2` 只允许 0.28.x 中不低于 0.28.2 的版本，' +
-      '但已安装的版本记录在锁文件里，只有改写 `package.json` 才会升级。',
+    '两列版本范围都是 `package.json` 中的写法。`^` 表示允许不破坏兼容的更新版本（`^1.2.0` 允许 1.x 中不低于 1.2.0 的版本，`^0.28.2` 只允许 0.28.x）。' +
+      '`^1.2.0` 虽然已经允许 1.3.0，但锁文件记录的仍是原来装的版本，pnpm 不会自己换；把写法改成 `^1.3.0` 并重新生成锁文件，才真正用上新版本。',
     '',
     '| 包 | 原来的版本范围 | 新的版本范围 | 所在文件 |',
     '| --- | --- | --- | --- |'

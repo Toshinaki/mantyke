@@ -43,6 +43,7 @@ jobs:
       # 脚本取自触发这次运行的分支（定时运行时是 master）。手动运行（在 Actions 页面点 Run workflow）时可以选择分支，
       # 运行的是该分支上的工作流和脚本，可以用来在合并前试验对它们的修改。
       # 不过工作流文件要先存在于 master 上，Actions 页面才会出现这个工作流。
+      # 所以先把触发分支上的脚本复制到 $RUNNER_TEMP（运行器上的临时目录，切换分支不影响它），再切换到 master。
       # 要升级的 package.json 始终取自 master，PR 也始终合并进 master。仓库是公开的，不带令牌也能拉取。
       - name: Switch to the base branch
         run: |
@@ -79,7 +80,9 @@ jobs:
       # 两份 @mantine/core 各自创建了自己的 context 对象，外层放进的是新版的那个，组件去旧版的那个里取，
       # 取不到，测试就报「MantineProvider was not found」。
       # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
-      # 这里只需要锁文件，--ignore-scripts 不运行依赖包自带、安装时自动运行的脚本。
+      # --no-frozen-lockfile 允许修改锁文件（CI 中 pnpm 默认不允许）。
+      # 这一步只为生成锁文件，不会运行或构建任何代码，所以用 --ignore-scripts 跳过依赖包自带、安装时自动运行的脚本
+      # （例如编译原生模块），也让这些第三方脚本没有机会运行。
       - name: Regenerate lockfile
         if: steps.upgrade.outputs.changed == 'true'
         run: |
