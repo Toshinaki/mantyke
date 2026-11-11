@@ -39,7 +39,7 @@
     "@nx/eslint": "23.3.1",
     "@nx/jest": "23.3.1",
     "@nx/next": "23.3.1",
-    "@nx/rollup": "23.3.1",
+    "@nx/rollup": "24.0.5",
     "@nx/storybook": "23.3.1",
     "@nx/vite": "23.3.1",
     "@nx/vitest": "23.3.1",
