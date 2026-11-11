@@ -35,7 +35,8 @@ jobs:
       # （依赖包自带的安装脚本则不会运行，见下面 Regenerate lockfile 步骤的 --ignore-scripts）。actions/checkout 默认把 GITHUB_TOKEN
       # （GitHub 为每次运行自动生成、能按工作流的权限访问本仓库的令牌）写进 .git/config，
       # 这里关掉（persist-credentials: false），让这些代码读不到令牌。
-      # 推送用的令牌（见下面的 Generate token 步骤）在这些步骤结束后才生成。
+      # 推送用的令牌（见下面的 Generate token 步骤）在 Install npm-check-updates、Upgrade package.json、
+      # Regenerate lockfile 这几步结束后才生成。
       - name: Checkout
         uses: actions/checkout@v7
         with:
