@@ -31,7 +31,8 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      # 升级和安装依赖时会运行第三方代码（npm-check-updates，简称 ncu，和 pnpm 这两个工具本身）。actions/checkout 默认把 GITHUB_TOKEN
+      # 升级和安装依赖时会运行第三方代码：npm-check-updates（简称 ncu）和 pnpm 这两个工具
+      # （依赖包自带的安装脚本则不会运行，见下面 Regenerate lockfile 步骤的 --ignore-scripts）。actions/checkout 默认把 GITHUB_TOKEN
       # （GitHub 为每次运行自动生成、能按工作流的权限访问本仓库的令牌）写进 .git/config，
       # 这里关掉（persist-credentials: false），让这些代码读不到令牌。
       # 推送用的令牌（见下面的 Generate token 步骤）在这些步骤结束后才生成。
@@ -41,10 +42,10 @@ jobs:
           persist-credentials: false
 
       # 要升级的 package.json 始终取自 master，PR 也始终合并进 master，所以这一步切换到 master。
-      # 脚本却取自触发这次运行的分支（定时运行时也是 master）：手动运行（在 Actions 页面点 Run workflow）时可以选择分支，
-      # 运行的是该分支上的工作流和脚本，可以用来在合并前试验对它们的修改。
-      # （工作流文件要先存在于 master 上，Actions 页面才会出现这个工作流。）
-      # 因此切换前先把脚本复制到 $RUNNER_TEMP（GitHub 运行这个工作流的机器上的临时目录，切换分支不影响它）。
+      # 脚本却取自触发这次运行的分支（定时运行时也是 master），因此切换前先把脚本复制到 $RUNNER_TEMP
+      # （GitHub 运行这个工作流的机器上的临时目录，切换分支不影响它）。
+      # 这样做是为了：本工作流合并进 master 之后，修改工作流或脚本的分支可以在合并前先试运行——
+      # 手动运行（在 Actions 页面点 Run workflow）时选择那个分支，运行的就是该分支上的工作流和脚本。
       # 仓库是公开的，不带令牌也能拉取 master。
       - name: Switch to the base branch
         run: |
