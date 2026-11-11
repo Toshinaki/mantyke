@@ -21,7 +21,7 @@ concurrency:
 env:
   BRANCH: deps/weekly
   BASE: master
-  # 本工作流的提交都用这个标题。PR 中有其他标题的提交，说明有人在这个分支上另外改过，工作流就不再覆盖这个分支
+  # 本工作流的提交都用这个标题。PR 中有其他标题的提交，说明有人在这个分支上另外改过，工作流在这个 PR 合并或关闭之前就不再覆盖这个分支
   COMMIT_SUBJECT: 'deps: 每周升级依赖的 minor / patch 版本'
   NCU_VERSION: 23.1.1
 
@@ -78,9 +78,9 @@ jobs:
       # 为什么还要运行 pnpm dedupe：
       # packages/ 下的各包把 Mantine 等声明为 peer 依赖（应由使用方提供的依赖）。这些包是 pnpm workspace
       # （一个仓库里管理多个包的机制）的成员，pnpm 为每个成员单独安装依赖；pnpm 默认还会自动安装 peer 依赖，
-      # 所以它为每个包装上 Mantine，并在锁文件里记下每个包装的是哪个版本。
+      # 所以它为每个包都安装 Mantine，并在锁文件里记下每个包所安装的版本。
       # 根目录 package.json 也直接依赖 @mantine/core，上一步把它升到了新版本。
-      # pnpm install 只为 package.json 中写法改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0，接受 9.x 的任何版本）
+      # pnpm install 只为 package.json 中版本范围（如 ^9.0.0 这串文字）改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0，接受 9.x 的任何版本）
       # 没有变，旧版本仍在这个范围内，所以这些记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
       # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面套一层根目录新版的 MantineProvider
       # （为套在它里面的组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为所在软件包记录的旧版 @mantine/core。
