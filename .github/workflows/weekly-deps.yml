@@ -49,7 +49,7 @@ jobs:
       # 手动运行（在 Actions 页面点 Run workflow）时选择那个分支，运行的就是该分支上的工作流文件和脚本。
       # 不过 GitHub 只在 master 上已有这个工作流文件时，才在 Actions 页面显示它、允许手动运行，
       # 所以本工作流第一次进入 master 之前还不能这样试。
-      # 仓库是公开的，不带令牌也能拉取 master。
+      # 上面 Checkout 步骤没有保存令牌，所以这里不带令牌拉取 master；仓库是公开的，这样也能拉取。
       - name: Switch to the base branch
         run: |
           cp -R .github/scripts "$RUNNER_TEMP/weekly-deps-scripts"
