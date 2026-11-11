@@ -1,6 +1,6 @@
 name: Weekly Dependency Upgrades
 
-# 每周一把根目录和 apps/docs 的 npm 依赖升到当前大版本内的最新版本，重新生成锁文件，
+# 每周一运行：把根目录和 apps/docs 的 npm 依赖升到当前大版本内的最新版本，重新生成锁文件，
 # 推送到固定分支 deps/weekly，并创建或更新同一个 PR。没有可升级的版本时不开 PR。
 # 取代 Dependabot 的 npm 版本升级 PR，原因见 .github/dependabot.yml 开头的注释。
 # 升级规则在 .github/scripts/ncurc.cjs，修改 package.json 和生成 PR 说明在 .github/scripts/weekly-deps.mjs。
@@ -40,7 +40,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # 脚本取自触发这次运行的分支：手动运行时选择其他分支，可以在合并前试验对脚本的修改。
+      # 脚本取自触发这次运行的分支。手动运行（在 Actions 页面点 Run workflow）时可以选择分支，
+      # 运行的是该分支上的工作流和脚本，可以用来在合并前试验对它们的修改。
+      # 不过工作流文件要先存在于 master 上，Actions 页面才会出现这个工作流。
       # 要升级的 package.json 始终取自 master，PR 也始终合并进 master。仓库是公开的，不带令牌也能拉取。
       - name: Switch to the base branch
         run: |
@@ -64,11 +66,15 @@ jobs:
         id: upgrade
         run: node "$RUNNER_TEMP/weekly-deps-scripts/weekly-deps.mjs" "$RUNNER_TEMP/pr-body.md"
 
-      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），锁文件为它们单独记录一份解析结果。
-      # 只升级根目录时，这份记录仍停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
-      # 组件代码和测试工具从不同位置引入 @mantine/core，拿到的是不同的两份。MantineProvider 通过 React context
-      # 把主题传给组件，两份各有自己的 context，组件就找不到测试包在它外面的 MantineProvider，
-      # 测试报「MantineProvider was not found」。dedupe 让它们都解析到根目录的版本。
+      # 为什么还要运行 pnpm dedupe：
+      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），锁文件为每个包单独记录它实际用哪个版本。
+      # pnpm install 只重新解析 package.json 中写法改变了的依赖。各包的 peer 范围（如 ^9.0.0）没有变，
+      # 旧版本仍然满足它，所以这份记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
+      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面包一层根目录新版的 MantineProvider；
+      # 组件源码在 packages/ 下，引入的却是为该包记录的旧版 @mantine/core。
+      # MantineProvider 通过 React context（React 在组件之间传值的机制）把主题传给组件，两份 @mantine/core 各有
+      # 自己的 context，组件找不到外面那层 MantineProvider，测试报「MantineProvider was not found」。
+      # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
       # 这里只需要锁文件，--ignore-scripts 不运行依赖的安装脚本。
       - name: Update lockfile
         if: steps.upgrade.outputs.changed == 'true'
@@ -76,10 +82,11 @@ jobs:
           pnpm install --no-frozen-lockfile --ignore-scripts
           pnpm dedupe --ignore-scripts
 
-      # 用 GitHub App 的令牌推送和创建 PR。这个 App 是仓库为自动化单独配置的，
-      # 用到仓库 secrets 中的 RELEASE_APP_ID（App 的 ID）和 RELEASE_APP_PRIVATE_KEY（App 的私钥），
-      # 发布（release.yml）和 update-lockfile.yml 也用它。
-      # 由默认 GITHUB_TOKEN 推送的提交和创建的 PR 不会触发 PR 检查，在要求检查必须通过的规则下，这个 PR 将无法合并。
+      # 用 GitHub App 的令牌推送和创建 PR。GitHub App 相当于安装在仓库上的机器人账号，用私钥可以换到临时令牌。
+      # 这个 App 是仓库为自动化单独配置的，用到仓库 secrets 中的 RELEASE_APP_ID（App 的 ID）和
+      # RELEASE_APP_PRIVATE_KEY（App 的私钥），发布（release.yml）和 update-lockfile.yml 也用它。
+      # 不用 GITHUB_TOKEN 的原因：由它推送的提交和创建的 PR 不会触发其他工作流，PR 检查就不会运行，
+      # 在要求检查必须通过的规则下，这个 PR 将无法合并。
       - name: Generate token
         id: app-token
         uses: actions/create-github-app-token@v3

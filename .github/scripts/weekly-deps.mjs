@@ -194,8 +194,9 @@ const lines = [
   `由${workflowLink}（\`.github/workflows/weekly-deps.yml\`）生成，最近一次更新：${today}（UTC）。`,
   '',
   `把 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
-    '`packages/` 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），`pnpm dedupe` 让它们与根目录使用同一版本。' +
-    '否则新旧两个版本的 Mantine 并存，组件和测试拿到的不是同一份，测试会报「MantineProvider was not found」。',
+    '`packages/` 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），`pnpm install` 不会更新它们在锁文件里记录的版本；' +
+    '`pnpm dedupe` 让它们与根目录使用同一版本。否则新旧两个版本的 Mantine 并存，组件和测试拿到的不是同一份，' +
+    '测试会报「MantineProvider was not found」（详见 `.github/workflows/weekly-deps.yml` 中 Update lockfile 步骤的注释）。',
   '',
   `## 已升级（${upgradedRows.length} 个）`,
   '',
