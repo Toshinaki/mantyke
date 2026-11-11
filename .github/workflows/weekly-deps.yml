@@ -44,10 +44,11 @@ jobs:
           persist-credentials: false
 
       # 要升级的 package.json 始终取自 master，PR 也始终合并进 master，所以这一步切换到 master。
-      # 脚本却用上面 Checkout 步骤拉下的、触发这次运行的分支上的版本（定时运行时也是 master），
+      # 脚本（.github/scripts 下的 weekly-deps.mjs 和升级规则 ncurc.cjs）却用上面 Checkout 步骤拉下的、
+      # 触发这次运行的分支上的版本（定时运行时也是 master），
       # 因此切换前先把脚本复制到 $RUNNER_TEMP（GitHub 运行这个工作流的机器上的临时目录，切换分支不影响它）。
       # 这样做的好处：以后修改这个工作流或脚本时，可以先在改动所在的分支上试运行，确认没问题再合并。
-      # 注意试运行不是演练：它和定时运行一样，会真的推送 deps/weekly 并创建或更新那个 PR。
+      # 注意试运行会产生实际效果：它和定时运行一样，会真的推送 deps/weekly 并创建或更新那个 PR。
       # 手动运行（在 Actions 页面点 Run workflow）时选择那个分支，运行的就是该分支上的工作流文件和脚本。
       # 不过 GitHub 只在 master 上已有这个工作流文件时，才在 Actions 页面显示它、允许手动运行，
       # 所以本工作流第一次进入 master 之前还不能这样试。
@@ -80,7 +81,7 @@ jobs:
       # 所以它为每个包装上 Mantine，并在锁文件里记下每个包装的是哪个版本。
       # 根目录 package.json 也直接依赖 @mantine/core，上一步把它升到了新版本。
       # pnpm install 只为 package.json 中写法改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0，接受 9.x 的任何版本）
-      # 没有变，旧版本仍在这个范围内，所以这份记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
+      # 没有变，旧版本仍在这个范围内，所以这些记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
       # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面套一层根目录新版的 MantineProvider
       # （为套在它里面的组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为所在软件包记录的旧版 @mantine/core。
       # MantineProvider 通过 React context 传递设置：外层组件把值放进一个 context 对象，内层组件按同一个对象去取。
