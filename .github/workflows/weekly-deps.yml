@@ -108,9 +108,10 @@ jobs:
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --base "$BASE" --state open \
             --json number --jq '.[0].number // empty')
 
-          # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括手动提交的修改，
-          # 以及给 PR 加上 update-lockfile 或 update-screenshots 标签后（例如手动改了版本号、或升级改变了组件的样子），
-          # 对应的工作流在 CI 中重新生成锁文件、或 UI 测试截图对比用的基准截图并提交的改动。
+          # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括：手动提交的修改；
+          # 手动改了版本号后加上 update-lockfile 标签，Update Lockfile 工作流重新生成并提交的锁文件；
+          # 升级改变了组件的样子后加上 update-screenshots 标签，Update Screenshots 工作流重新生成并提交的
+          # UI 测试基准截图（截图对比用的标准图片）。
           # PR 合并或关闭之后，下次运行会从 master 重新生成分支和 PR
           if [ -n "$pr" ]; then
             headlines=$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json commits --jq '.commits[].messageHeadline')

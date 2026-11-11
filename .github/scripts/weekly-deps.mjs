@@ -209,7 +209,7 @@ const lines = [
 ];
 if (upgradedRows.length > 0) {
   lines.push(
-    '版本一列是 `package.json` 中的写法（版本范围）。`^` 表示允许同一大版本内的更新版本，但已安装的版本记录在锁文件里，只有改写 `package.json` 才会升级。',
+    '两列版本范围都是 `package.json` 中的写法。`^` 表示允许同一大版本内的更新版本，但已安装的版本记录在锁文件里，只有改写 `package.json` 才会升级。',
     '',
     '| 包 | 原来的版本范围 | 新的版本范围 | 所在文件 |',
     '| --- | --- | --- | --- |'
@@ -251,8 +251,8 @@ lines.push(
   '## 说明',
   '',
   `- 只升到同一大版本内的最新版本；0.x 版本的包只升 patch。具体规则在 \`.github/scripts/${NCU_CONFIG_NAME}\`。`,
-  `- 每次运行时，分支 \`${branch}\` 都从 \`${base}\` 重新生成并强制推送，本 PR 的内容随之更新。`,
-  `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交（按提交标题判断：本工作流的提交标题都是 ${commitSubject}），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。这包括手动提交的修改（例如为通过检查修改代码），以及给 PR 加上 \`update-lockfile\` 或 \`update-screenshots\` 标签后（例如手动改了版本号、或升级改变了组件的样子），Update Lockfile 或 Update Screenshots 工作流重新生成锁文件、或 UI 测试截图对比用的基准图片时提交的改动。`
+  `- 每次运行时，工作流都从 \`${base}\` 重新生成分支 \`${branch}\` 的内容。内容有变化时强制推送，本 PR 随之更新；没有变化时只更新本说明。`,
+  `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交（按提交标题判断：本工作流的提交标题都是 ${commitSubject}），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。这包括：手动提交的修改（例如为通过检查修改代码）；手动改了版本号后加上 \`update-lockfile\` 标签，Update Lockfile 工作流重新生成并提交的锁文件；升级改变了组件的样子后加上 \`update-screenshots\` 标签，Update Screenshots 工作流重新生成并提交的 UI 测试基准截图（截图对比用的标准图片）。`
 );
 
 const body = `${lines.join('\n')}\n`;
