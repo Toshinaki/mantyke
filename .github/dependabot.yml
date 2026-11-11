@@ -1,98 +1,18 @@
 version: 2
 
+# Dependabot 是 GitHub 自带的依赖升级机器人，按这个文件的配置定期为过时的依赖开 PR。
+# npm 依赖的版本升级不再由 Dependabot 负责，改由每周运行的 .github/workflows/weekly-deps.yml 汇总成一个 PR。原因：
+# - 原先的配置会把版本号必须保持一致的包拆进不同的 PR。例如 vitest 与 @vitest/*、nx 与 @nx/* 是同一套工具的各个部分，
+#   一起发版，版本不同时互相不兼容。原先这里按包名配置了几个分组，每组一个 PR，其中测试组（`vitest*`）排在
+#   构建工具组（`*vite*`）前面；一个包同时匹配几个分组时，归入排在前面的那个。vitest 两个都匹配，归入测试组；
+#   @vitest/* 只匹配 `*vite*`，进了构建工具组。分组只收 minor / patch 升级，大版本升级每个包单独一个 PR；
+#   原先的 ignore 设置（已随本文件中原来那段 npm 依赖配置一起删除）让 Dependabot 不为其中列出的包开大版本升级 PR，但它只列了 nx，没列 @nx/*，于是出现了只把一个 @nx/* 包升到新大版本、nx 仍留在旧大版本的 PR。
+# - Dependabot 不运行 pnpm dedupe（合并锁文件中同一个包的多个版本）。pnpm 会为 packages/ 下的各包自动安装 Mantine 等
+#   peer 依赖（应由使用方提供的依赖）并在锁文件里记下版本；只升级根目录的 Mantine 时，这些记录停在旧版本，测试报「MantineProvider was not found」。
+#   记录为什么停在旧版本、测试为什么因此报错，见 weekly-deps.yml 中 Regenerate lockfile 步骤的注释。
+# Dependabot 的安全更新是仓库设置（Settings → Code security → Dependabot security updates），不受这个文件影响：
+# 开启后，即使这里没有 npm 的配置，有漏洞的依赖也会收到安全更新的 PR。2026-11 时这项设置没有开启。
 updates:
-  # Enable version updates for npm (works with pnpm)
-  - package-ecosystem: 'npm'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '09:00'
-      timezone: 'UTC'
-    open-pull-requests-limit: 10
-    assignees:
-      - 'Toshinaki' # Replace with your GitHub username
-    commit-message:
-      prefix: 'deps'
-      prefix-development: 'deps-dev'
-      include: 'scope'
-    labels:
-      - 'dependencies'
-      - 'automated'
-    # Group dependency updates to reduce PR noise
-    groups:
-      # Storybook 各包要求版本完全一致，所有更新（包括 major）放在同一个 PR 里。
-      # Dependabot 把依赖归入第一个匹配的分组，因此这个分组必须排在最前面
-      storybook:
-        patterns:
-          - 'storybook'
-          - '@storybook/*'
-      # Group all non-major updates together
-      minor-and-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group dev dependencies separately
-      dev-dependencies:
-        patterns:
-          - '*'
-        dependency-type: 'development'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group React ecosystem updates
-      react-ecosystem:
-        patterns:
-          - 'react*'
-          - '@types/react*'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group testing dependencies
-      testing:
-        patterns:
-          - '*jest*'
-          - '*testing*'
-          - 'vitest*'
-          - '@testing-library/*'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group build tools
-      build-tools:
-        patterns:
-          - '*webpack*'
-          - '*rollup*'
-          - '*vite*'
-          - '*esbuild*'
-          - 'nx'
-          - '@nx/*'
-        update-types:
-          - 'minor'
-          - 'patch'
-    ignore:
-      # Ignore major version updates for these packages (handle manually)
-      - dependency-name: 'react'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'react-dom'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'nx'
-        update-types: ['version-update:semver-major']
-      # Ignore specific packages that require manual updates
-      - dependency-name: 'node'
-      - dependency-name: '@types/node'
-        update-types: ['version-update:semver-major']
-      # eslint-config-mantine 只支持 ESLint 9，等它支持 ESLint 10 后再升级
-      - dependency-name: 'eslint'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@eslint/js'
-        update-types: ['version-update:semver-major']
-      # typescript-eslint 要求 TypeScript < 6.1，TypeScript 7 暂不升级
-      - dependency-name: 'typescript'
-        versions: ['>=7']
-
   # GitHub Actions updates
   - package-ecosystem: 'github-actions'
     directory: '/'

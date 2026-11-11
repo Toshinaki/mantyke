@@ -1,0 +1,174 @@
+name: Weekly Dependency Upgrades
+
+# 每周一运行：按升级规则把根目录和 apps/docs 的 npm 依赖升到当前大版本内的最新版本（有例外，见下面提到的规则文件 ncurc.cjs），重新生成锁文件，
+# 推送到固定分支 deps/weekly，并创建或更新同一个 PR。没有可升级的版本时不开 PR。
+# 取代 Dependabot 的 npm 版本升级 PR，原因见 .github/dependabot.yml 开头的注释。
+# 升级规则在 .github/scripts/ncurc.cjs（升级工具 npm-check-updates 的配置文件），
+# 修改 package.json 和生成 PR 说明在 .github/scripts/weekly-deps.mjs。
+on:
+  schedule:
+    # 每周一 09:17（UTC）。避开整点：整点时 GitHub 的定时任务最拥挤，可能被延后或丢弃
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  BRANCH: deps/weekly
+  BASE: master
+  # 本工作流的提交都用这个标题。PR 中有其他标题的提交，说明有人在这个分支上另外改过，工作流在这个 PR 合并或关闭之前就不再覆盖这个分支
+  COMMIT_SUBJECT: 'deps: 每周升级依赖的 minor / patch 版本'
+  NCU_VERSION: 23.1.1
+
+jobs:
+  upgrade:
+    name: Upgrade dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # 升级和安装依赖时会运行第三方代码：npm-check-updates（简称 ncu）和 pnpm 这两个工具
+      # （依赖包自带的安装脚本则不会运行，见下面 Regenerate lockfile 步骤的 --ignore-scripts）。actions/checkout 默认把 GITHUB_TOKEN
+      # （GitHub 为每次运行自动生成、能按工作流的权限访问本仓库的令牌）写进 .git/config，
+      # 这里关掉（persist-credentials: false），让这些代码读不到令牌。
+      # 推送用的令牌（见下面的 Generate token 步骤）在 Install npm-check-updates、Upgrade package.json、
+      # Regenerate lockfile 这几步结束后才生成。
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # 要升级的 package.json 始终取自 master，PR 也始终合并进 master，所以这一步切换到 master。
+      # 脚本（.github/scripts 下的 weekly-deps.mjs 和升级规则 ncurc.cjs）却用上面 Checkout 步骤拉下的、
+      # 触发这次运行的分支上的版本（定时运行时也是 master），
+      # 因此切换前先把脚本复制到 $RUNNER_TEMP（GitHub 运行这个工作流的机器上的临时目录，切换分支不影响它）。
+      # 这样做的好处：以后修改这个工作流或脚本时，可以先在改动所在的分支上试运行，确认没问题再合并。
+      # 手动运行（在 Actions 页面点 Run workflow）时选择改动所在的分支，运行的就是该分支上的工作流文件和脚本。
+      # 注意试运行会产生实际效果：它和定时运行一样，会真的推送 deps/weekly 并创建或更新那个 PR。
+      # 不过 GitHub 只在 master 上已有这个工作流文件时，才在 Actions 页面显示它、允许手动运行，
+      # 所以本工作流第一次进入 master 之前还不能这样试。
+      # 上面 Checkout 步骤没有保存令牌，所以这里不带令牌拉取 master；仓库是公开的，这样也能拉取。
+      - name: Switch to the base branch
+        run: |
+          cp -R .github/scripts "$RUNNER_TEMP/weekly-deps-scripts"
+          git fetch --depth=1 origin "+refs/heads/${BASE}:refs/remotes/origin/${BASE}"
+          git checkout --detach "origin/${BASE}"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install npm-check-updates
+        run: npm install --global --ignore-scripts "npm-check-updates@${NCU_VERSION}"
+
+      - name: Upgrade package.json
+        id: upgrade
+        run: node "$RUNNER_TEMP/weekly-deps-scripts/weekly-deps.mjs" "$RUNNER_TEMP/pr-body.md"
+
+      # 为什么还要运行 pnpm dedupe：
+      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（应由使用方提供的依赖）。这些包是 pnpm workspace
+      # （一个仓库里管理多个包的机制）的成员，pnpm 为每个成员单独安装依赖；pnpm 默认还会自动安装 peer 依赖，
+      # 所以它为每个包都安装 Mantine，并在锁文件里记下每个包所安装的版本。
+      # 根目录 package.json 也直接依赖 @mantine/core，上一步把它升到了新版本。
+      # pnpm install 只为 package.json 中版本范围（如 ^9.0.0 这串文字）改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0，接受 9.x 的任何版本）
+      # 没有变，旧版本仍在这个范围内，所以这些记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
+      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面套一层根目录新版的 MantineProvider
+      # （为套在它里面的组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为所在软件包记录的旧版 @mantine/core。
+      # MantineProvider 通过 React context 传递设置：外层组件把值放进一个 context 对象，内层组件按同一个对象去取。
+      # 两份 @mantine/core 各自创建了自己的 context 对象，外层放进的是新版的那个，组件去旧版的那个里取，
+      # 取不到，测试就报「MantineProvider was not found」。
+      # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
+      # --no-frozen-lockfile 允许修改锁文件（CI 中 pnpm 默认不允许）。
+      # 这一步只为生成锁文件，除了 pnpm 本身不需要运行任何代码，所以用 --ignore-scripts 跳过依赖包自带、安装时自动运行的脚本
+      # （例如编译用 C/C++ 写的扩展），也让这些第三方脚本没有机会运行。
+      - name: Regenerate lockfile
+        if: steps.upgrade.outputs.changed == 'true'
+        run: |
+          pnpm install --no-frozen-lockfile --ignore-scripts
+          pnpm dedupe --ignore-scripts
+
+      # 用 GitHub App 的令牌推送和创建 PR。GitHub App 相当于安装在仓库上的机器人账号，用私钥可以换到临时令牌。
+      # 这个 App 是仓库为自动化单独配置的，用到仓库 secrets（仓库设置中保存的机密值）中的 RELEASE_APP_ID（App 的 ID）和
+      # RELEASE_APP_PRIVATE_KEY（App 的私钥），release.yml、update-lockfile.yml、update-screenshots.yml 也用它。
+      # 不用 GITHUB_TOKEN 的原因：由它推送的提交和创建的 PR 不会触发其他工作流，PR 检查就不会运行；
+      # 而 master 的保护规则（仓库设置中的 Merge Protection）要求 pr.yml 中的两项检查 Validate PR 和 UI Tests 通过才能合并。
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Push and open the pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CHANGED: ${{ steps.upgrade.outputs.changed }}
+          BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --base "$BASE" --state open \
+            --json number --jq '.[0].number // empty')
+
+          # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括：手动提交的修改；
+          # 手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 update-lockfile 标签，
+          # 由另一个工作流 update-lockfile.yml 重新生成并提交的锁文件；
+          # 升级改变了组件的样子后加上 update-screenshots 标签，由 update-screenshots.yml 重新生成并提交的
+          # UI 测试基准截图（截图对比用的标准图片）。
+          # PR 合并或关闭之后，下次运行会从 master 重新生成分支和 PR
+          if [ -n "$pr" ]; then
+            headlines=$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json commits --jq '.commits[].messageHeadline')
+            others=$(printf '%s\n' "$headlines" | grep -cvxF "$COMMIT_SUBJECT" || true)
+            if [ "$others" -gt 0 ]; then
+              echo "::warning::PR #${pr} 上有 ${others} 个不是本工作流生成的提交，本次不更新分支 ${BRANCH} 和这个 PR。合并或关闭这个 PR 之后，下次运行会从 ${BASE} 重新生成分支和 PR。"
+              exit 0
+            fi
+          fi
+
+          if [ "$CHANGED" != 'true' ]; then
+            echo "没有可升级的版本。"
+            if [ -n "$pr" ]; then
+              gh pr close "$pr" --repo "$GITHUB_REPOSITORY" \
+                --comment "按升级规则，${BASE} 上的依赖已经没有可升级的版本，关闭这个 PR。"
+            fi
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json apps/docs/package.json pnpm-lock.yaml
+          git commit -m "$COMMIT_SUBJECT"
+
+          remote_sha=''
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" > /dev/null; then
+            git fetch --depth=1 origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}"
+            remote_sha=$(git rev-parse "refs/remotes/origin/${BRANCH}")
+          fi
+
+          # 分支的内容与这次生成的完全相同时不推送，避免无谓地重新运行 PR 检查
+          if [ -n "$remote_sha" ] && [ "$(git rev-parse "${remote_sha}^{tree}")" = "$(git rev-parse 'HEAD^{tree}')" ]; then
+            echo "分支 ${BRANCH} 的内容没有变化，不推送。"
+          else
+            # 分支每次都从 master 重新生成，所以强制推送；
+            # --force-with-lease：只有远端分支仍是上面查到的提交时才推送（上面没查到分支时，只在它仍不存在时推送）；
+            # 如果这期间有人推送了新提交，推送会失败，不会覆盖它们
+            git push --force-with-lease="refs/heads/${BRANCH}:${remote_sha}" origin "HEAD:refs/heads/${BRANCH}"
+          fi
+
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "$COMMIT_SUBJECT" --body-file "$BODY_FILE"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base "$BASE" --head "$BRANCH" \
+              --title "$COMMIT_SUBJECT" --body-file "$BODY_FILE" --label dependencies --label automated
+          fi
