@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      # 升级和安装依赖时会运行第三方代码（ncu、pnpm 这两个工具本身）。actions/checkout 默认把 GITHUB_TOKEN
+      # 升级和安装依赖时会运行第三方代码（npm-check-updates，简称 ncu，和 pnpm 这两个工具本身）。actions/checkout 默认把 GITHUB_TOKEN
       # （GitHub 为每次运行自动生成、能按工作流的权限访问本仓库的令牌）写进 .git/config，
       # 这里关掉（persist-credentials: false），让这些代码读不到令牌。
       # 推送用的令牌（见下面的 Generate token 步骤）在这些步骤结束后才生成。
@@ -67,18 +67,19 @@ jobs:
         run: node "$RUNNER_TEMP/weekly-deps-scripts/weekly-deps.mjs" "$RUNNER_TEMP/pr-body.md"
 
       # 为什么还要运行 pnpm dedupe：
-      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（应由使用方提供的依赖）。在本仓库里，这些包自己也是 pnpm 的项目，
-      # pnpm 默认会自动为它们安装 peer 依赖，并在锁文件里为每个包记下装的是哪个版本。
+      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（应由使用方提供的依赖）。这些包是 pnpm workspace
+      # （一个仓库里管理多个包的机制）的成员，pnpm 为每个成员单独安装依赖；pnpm 默认还会自动安装 peer 依赖，
+      # 所以它为每个包装上 Mantine，并在锁文件里记下每个包装的是哪个版本。
       # 根目录 package.json 也直接依赖 @mantine/core，上一步把它升到了新版本。
       # pnpm install 只为 package.json 中写法改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0）没有变，
       # 旧版本仍然满足它，所以这份记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
-      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面包一层根目录新版的 MantineProvider
-      # （为包在它里面的组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为该包记录的旧版 @mantine/core。
+      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面套一层根目录新版的 MantineProvider
+      # （为套在它里面的组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为所在软件包记录的旧版 @mantine/core。
       # MantineProvider 通过 React context 传递设置：外层组件把值放进一个 context 对象，内层组件按同一个对象去取。
       # 两份 @mantine/core 各自创建了自己的 context 对象，外层放进的是新版的那个，组件去旧版的那个里取，
       # 取不到，测试就报「MantineProvider was not found」。
       # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
-      # 这里只需要锁文件，--ignore-scripts 不运行依赖的安装脚本。
+      # 这里只需要锁文件，--ignore-scripts 不运行依赖包自带、安装时自动运行的脚本。
       - name: Update lockfile
         if: steps.upgrade.outputs.changed == 'true'
         run: |
@@ -88,8 +89,8 @@ jobs:
       # 用 GitHub App 的令牌推送和创建 PR。GitHub App 相当于安装在仓库上的机器人账号，用私钥可以换到临时令牌。
       # 这个 App 是仓库为自动化单独配置的，用到仓库 secrets（仓库设置中保存的机密值）中的 RELEASE_APP_ID（App 的 ID）和
       # RELEASE_APP_PRIVATE_KEY（App 的私钥），release.yml、update-lockfile.yml、update-screenshots.yml 也用它。
-      # 不用 GITHUB_TOKEN 的原因：由它推送的提交和创建的 PR 不会触发其他工作流，PR 检查就不会运行，
-      # 在要求检查必须通过的规则下，这个 PR 将无法合并。
+      # 不用 GITHUB_TOKEN 的原因：由它推送的提交和创建的 PR 不会触发其他工作流，PR 检查就不会运行；
+      # 而 master 的保护规则（仓库设置中的 Merge Protection）要求 Validate PR 和 UI Tests 通过才能合并。
       - name: Generate token
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -110,7 +111,7 @@ jobs:
             --json number --jq '.[0].number // empty')
 
           # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括：手动提交的修改；
-          # 手动改了版本号后加上 update-lockfile 标签，Update Lockfile 工作流重新生成并提交的锁文件；
+          # 手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 update-lockfile 标签，Update Lockfile 工作流重新生成并提交的锁文件；
           # 升级改变了组件的样子后加上 update-screenshots 标签，Update Screenshots 工作流重新生成并提交的
           # UI 测试基准截图（截图对比用的标准图片）。
           # PR 合并或关闭之后，下次运行会从 master 重新生成分支和 PR

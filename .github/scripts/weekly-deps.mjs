@@ -7,8 +7,9 @@
 // 运行在 GitHub Actions 中时，把 changed=true（package.json 有改动：有包被升级，或 pnpm.overrides 被同步）
 // 或 changed=false 写进环境变量 GITHUB_OUTPUT 指向的步骤输出文件，
 // 工作流的后续步骤据此决定是否更新锁文件和推送。
-// 本地试运行时可以用环境变量 NCU_BIN 指定一个 JS 文件代替全局的 ncu 命令，脚本用 node 运行它：
-// 可以是 npm-check-updates 包 package.json 中 bin 字段指向的文件，也可以是返回假数据的模拟脚本。
+// 本地试运行时可以用环境变量 NCU_BIN 指定一个 JS 文件代替全局的 ncu 命令，脚本用 node 运行它，参数与 ncu 相同。
+// 可以是 npm-check-updates 包自己的 package.json 中 bin 字段指向的文件，也可以是模拟 ncu 的脚本：
+// 它要像 ncu 一样向标准输出打印 { 包名: 新的版本范围 } 形式的 JSON，并在收到 --upgrade 时改写 --packageFile 指定的文件。
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -106,7 +107,7 @@ function getHoldReason(name, current, latest) {
   return `升级规则（\`.github/scripts/${NCU_CONFIG_NAME}\`）限制了这个包的升级范围，原因见该文件中的注释`;
 }
 
-/** 把同一个包在多个文件里的相同变化合并成一行，所在文件用顿号连接 */
+/** 把同一个包在多个文件里的相同变化合并成一行，所在文件收集到 files 数组中 */
 function mergeRows(rows, keyOf) {
   const merged = new Map();
   for (const row of rows) {
@@ -178,7 +179,7 @@ for (const [name, spec] of Object.entries(overrides)) {
   }
 }
 if (syncedOverrides.length > 0) {
-  // 仓库中的 package.json 都是 2 空格缩进、末尾换行，与 JSON.stringify 的输出一致
+  // 仓库中的 package.json 都是 2 空格缩进、末尾有一个换行：JSON.stringify(…, null, 2) 的输出再补一个换行，与原格式一致
   writeFileSync('package.json', `${JSON.stringify(rootPackage, null, 2)}\n`);
 }
 
@@ -202,7 +203,7 @@ const today = new Date().toISOString().slice(0, 10);
 const lines = [
   `由${workflowLink}（\`.github/workflows/weekly-deps.yml\`）生成，最近一次更新：${today}（UTC）。`,
   '',
-  `把 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
+  `把根目录的 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
     'pnpm 会为 `packages/` 下的各包自动安装 Mantine 等 peer 依赖（应由使用方提供的依赖），并在锁文件里记下版本；' +
     '根目录的 Mantine 升级时，`pnpm install` 不会跟着升级这些记录，`pnpm dedupe` 让这些包也使用根目录的新版本。' +
     '否则新旧两个版本的 Mantine 并存，组件源码和测试辅助库 `@mantine-tests/core` 拿到的不是同一份 Mantine，' +
@@ -213,7 +214,8 @@ const lines = [
 ];
 if (upgradedRows.length > 0) {
   lines.push(
-    '两列版本范围都是 `package.json` 中的写法。`^` 表示允许同一大版本内的更新版本，但已安装的版本记录在锁文件里，只有改写 `package.json` 才会升级。',
+    '两列版本范围都是 `package.json` 中的写法。`^` 表示允许不破坏兼容的更新版本（通常是同一大版本内；0.x 版本只到同一 minor 内），' +
+      '但已安装的版本记录在锁文件里，只有改写 `package.json` 才会升级。',
     '',
     '| 包 | 原来的版本范围 | 新的版本范围 | 所在文件 |',
     '| --- | --- | --- | --- |'
@@ -256,7 +258,7 @@ lines.push(
   '',
   `- 只升到同一大版本内的最新版本；0.x 版本的包只升 patch。具体规则在 \`.github/scripts/${NCU_CONFIG_NAME}\`。`,
   `- 每次运行时，工作流都从 \`${base}\` 重新生成分支 \`${branch}\` 的内容。内容有变化时强制推送，本 PR 随之更新；没有变化时只更新本说明。`,
-  `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交（按提交标题判断：本工作流的提交标题都是 ${commitSubject}），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。这包括：手动提交的修改（例如为通过检查修改代码）；手动改了版本号后加上 \`update-lockfile\` 标签，Update Lockfile 工作流重新生成并提交的锁文件；升级改变了组件的样子后加上 \`update-screenshots\` 标签，Update Screenshots 工作流重新生成并提交的 UI 测试基准截图（截图对比用的标准图片）。`
+  `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交（按提交标题判断：本工作流的提交标题都是 ${commitSubject}），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。这包括：手动提交的修改（例如为通过检查修改代码）；手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 \`update-lockfile\` 标签，Update Lockfile 工作流重新生成并提交的锁文件；升级改变了组件的样子后加上 \`update-screenshots\` 标签，Update Screenshots 工作流重新生成并提交的 UI 测试基准截图（截图对比用的标准图片）。`
 );
 
 const body = `${lines.join('\n')}\n`;
