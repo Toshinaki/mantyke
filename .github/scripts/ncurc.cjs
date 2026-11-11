@@ -14,7 +14,7 @@ const PATCH_ONLY = new Set([
 ]);
 
 // 打了 pnpm 补丁的包不自动升级。pnpm 补丁是用 pnpm patch 对安装后的依赖代码所做的修改，补丁文件在 patches/ 目录，
-// 在根目录 package.json 的 pnpm.patchedDependencies 中登记。现在登记的是 @mantine-tests/core，补丁修改了它的测试辅助代码。
+// 在根目录 package.json 的 pnpm.patchedDependencies 中登记。现在登记的是 @mantine-tests/core（Mantine 提供的组件测试辅助库），补丁修改了这个包里的一部分代码。
 // 补丁对新版本不一定适用，适用不了时 pnpm install 会失败。登记的键可能带版本号（name@1.2.3），这里去掉版本号。
 const patchedDependencies = Object.keys(rootPackage.pnpm?.patchedDependencies ?? {}).map((key) => {
   const at = key.lastIndexOf('@');

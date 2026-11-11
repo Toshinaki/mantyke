@@ -80,7 +80,7 @@ jobs:
       # 取不到，测试就报「MantineProvider was not found」。
       # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
       # 这里只需要锁文件，--ignore-scripts 不运行依赖包自带、安装时自动运行的脚本。
-      - name: Update lockfile
+      - name: Regenerate lockfile
         if: steps.upgrade.outputs.changed == 'true'
         run: |
           pnpm install --no-frozen-lockfile --ignore-scripts
@@ -111,8 +111,9 @@ jobs:
             --json number --jq '.[0].number // empty')
 
           # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括：手动提交的修改；
-          # 手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 update-lockfile 标签，Update Lockfile 工作流重新生成并提交的锁文件；
-          # 升级改变了组件的样子后加上 update-screenshots 标签，Update Screenshots 工作流重新生成并提交的
+          # 手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 update-lockfile 标签，
+          # 由另一个工作流 update-lockfile.yml 重新生成并提交的锁文件；
+          # 升级改变了组件的样子后加上 update-screenshots 标签，由 update-screenshots.yml 重新生成并提交的
           # UI 测试基准截图（截图对比用的标准图片）。
           # PR 合并或关闭之后，下次运行会从 master 重新生成分支和 PR
           if [ -n "$pr" ]; then
