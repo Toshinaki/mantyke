@@ -1,0 +1,140 @@
+name: Weekly Dependency Upgrades
+
+# 每周一把根目录和 apps/docs 的 npm 依赖升到当前大版本内的最新版本，重新生成锁文件，
+# 推送到固定分支 deps/weekly，并创建或更新同一个 PR。没有可升级的版本时不开 PR。
+# 取代 Dependabot 的 npm 版本升级 PR：Dependabot 按类别分组会拆开必须一起升级的包（nx 与 @nx/*），也不运行 pnpm dedupe。
+# 升级规则在 .github/scripts/ncurc.cjs，修改 package.json 和生成 PR 说明在 .github/scripts/weekly-deps.mjs。
+on:
+  schedule:
+    # 每周一 09:17（UTC）。避开整点：整点时 GitHub 的定时任务最拥挤，可能被延后或丢弃
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  BRANCH: deps/weekly
+  BASE: master
+  # 本工作流的提交都用这个标题。PR 中有其他标题的提交，说明有人在这个分支上另外改过，工作流就不再覆盖它
+  COMMIT_SUBJECT: 'deps: 每周升级依赖的 minor / patch 版本'
+  NCU_VERSION: 23.1.1
+
+jobs:
+  upgrade:
+    name: Upgrade dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # 升级和安装依赖时会运行第三方代码（ncu、pnpm），这期间磁盘上不保存任何令牌。
+      # 推送用的 App 令牌在这些步骤结束后才生成。
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # 脚本取自触发这次运行的分支：手动运行时选择其他分支，可以在合并前试验对脚本的修改。
+      # 要升级的 package.json 和 PR 的基准始终是 master。仓库是公开的，不带令牌也能拉取。
+      - name: Switch to the base branch
+        run: |
+          cp -R .github/scripts "$RUNNER_TEMP/weekly-deps-scripts"
+          git fetch --depth=1 origin "+refs/heads/${BASE}:refs/remotes/origin/${BASE}"
+          git checkout --detach "origin/${BASE}"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install npm-check-updates
+        run: npm install --global --ignore-scripts "npm-check-updates@${NCU_VERSION}"
+
+      - name: Upgrade package.json
+        id: upgrade
+        run: node "$RUNNER_TEMP/weekly-deps-scripts/weekly-deps.mjs" "$RUNNER_TEMP/pr-body.md"
+
+      # dedupe 让各包作为 peer 安装的依赖与根目录使用同一版本。
+      # 不运行 dedupe 时旧版本会留在锁文件里，例如两份 Mantine 并存时测试找不到 MantineProvider。
+      # 这里只需要锁文件，--ignore-scripts 不运行依赖的安装脚本。
+      - name: Update lockfile
+        if: steps.upgrade.outputs.changed == 'true'
+        run: |
+          pnpm install --no-frozen-lockfile --ignore-scripts
+          pnpm dedupe --ignore-scripts
+
+      # 用 GitHub App 的令牌推送和创建 PR。由默认 GITHUB_TOKEN 推送的提交和创建的 PR 不会触发 PR 检查，
+      # 在要求检查必须通过的规则下，这个 PR 将无法合并。
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Push and open the pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CHANGED: ${{ steps.upgrade.outputs.changed }}
+          BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --base "$BASE" --state open \
+            --json number --jq '.[0].number // empty')
+
+          # 打开的 PR 上有本工作流以外的提交（手动修改，或 update-lockfile、update-screenshots 标签生成的提交）时，
+          # 不覆盖这个分支。PR 合并或关闭之后，下次运行会重新生成
+          if [ -n "$pr" ]; then
+            headlines=$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json commits --jq '.commits[].messageHeadline')
+            others=$(printf '%s\n' "$headlines" | grep -cvxF "$COMMIT_SUBJECT" || true)
+            if [ "$others" -gt 0 ]; then
+              echo "::warning::PR #${pr} 上有 ${others} 个其他提交，本次不更新它。合并或关闭这个 PR 之后，下次运行会重新生成。"
+              exit 0
+            fi
+          fi
+
+          if [ "$CHANGED" != 'true' ]; then
+            echo "没有可升级的版本。"
+            if [ -n "$pr" ]; then
+              gh pr close "$pr" --repo "$GITHUB_REPOSITORY" \
+                --comment "${BASE} 上的依赖已经没有可升级的 minor / patch 版本，关闭这个 PR。"
+            fi
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json apps/docs/package.json pnpm-lock.yaml
+          git commit -m "$COMMIT_SUBJECT"
+
+          remote_sha=''
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" > /dev/null; then
+            git fetch --depth=1 origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}"
+            remote_sha=$(git rev-parse "refs/remotes/origin/${BRANCH}")
+          fi
+
+          # 分支的内容与这次生成的完全相同时不推送，避免无谓地重新运行 PR 检查
+          if [ -n "$remote_sha" ] && [ "$(git rev-parse "${remote_sha}^{tree}")" = "$(git rev-parse 'HEAD^{tree}')" ]; then
+            echo "分支 ${BRANCH} 的内容没有变化，不推送。"
+          else
+            # 分支每次都从 master 重新生成，所以强制推送；
+            # --force-with-lease 保证远端分支仍是上面查到的提交，不会覆盖这期间别人推送的提交
+            git push --force-with-lease="refs/heads/${BRANCH}:${remote_sha}" origin "HEAD:refs/heads/${BRANCH}"
+          fi
+
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "$COMMIT_SUBJECT" --body-file "$BODY_FILE"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base "$BASE" --head "$BRANCH" \
+              --title "$COMMIT_SUBJECT" --body-file "$BODY_FILE" --label dependencies --label automated
+          fi
