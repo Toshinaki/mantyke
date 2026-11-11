@@ -86,7 +86,7 @@ jobs:
 
       # 用 GitHub App 的令牌推送和创建 PR。GitHub App 相当于安装在仓库上的机器人账号，用私钥可以换到临时令牌。
       # 这个 App 是仓库为自动化单独配置的，用到仓库 secrets 中的 RELEASE_APP_ID（App 的 ID）和
-      # RELEASE_APP_PRIVATE_KEY（App 的私钥），发布（release.yml）和 update-lockfile.yml 也用它。
+      # RELEASE_APP_PRIVATE_KEY（App 的私钥），release.yml、update-lockfile.yml、update-screenshots.yml 也用它。
       # 不用 GITHUB_TOKEN 的原因：由它推送的提交和创建的 PR 不会触发其他工作流，PR 检查就不会运行，
       # 在要求检查必须通过的规则下，这个 PR 将无法合并。
       - name: Generate token
@@ -109,8 +109,8 @@ jobs:
             --json number --jq '.[0].number // empty')
 
           # 打开的 PR 上有不是本工作流生成的提交时，不覆盖这个分支。这包括手动提交的修改，
-          # 以及给 PR 加上 update-lockfile 或 update-screenshots 标签后，对应的工作流在 CI 中重新生成锁文件
-          # 或 UI 测试截图对比用的基准截图并提交的改动。
+          # 以及给 PR 加上 update-lockfile 或 update-screenshots 标签后（例如手动改了版本号、或升级改变了组件的样子），
+          # 对应的工作流在 CI 中重新生成锁文件、或 UI 测试截图对比用的基准截图并提交的改动。
           # PR 合并或关闭之后，下次运行会从 master 重新生成分支和 PR
           if [ -n "$pr" ]; then
             headlines=$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json commits --jq '.commits[].messageHeadline')
