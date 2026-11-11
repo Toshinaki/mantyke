@@ -98,7 +98,7 @@ function getHoldReason(name, current, latest) {
     return HOLD_REASONS[name];
   }
   if (ncuConfig.reject.includes(name)) {
-    return '仓库用 pnpm patch 修改过它安装后的代码（修改记录在 `patches/` 目录），这些修改对新版本不一定适用，需要手动升级并检查';
+    return '仓库用 pnpm patch 修改过它安装后的代码（修改记录在 `patches/` 目录），这些修改对新版本不一定适用；需要手动升级，并确认 `pnpm install` 能把修改应用到新版本、测试仍然通过';
   }
   if (current.parts[0] === 0) {
     return '0.x 版本的 minor 升级可能不兼容，等同于大版本升级，需要手动升级';
@@ -206,7 +206,7 @@ const today = new Date().toISOString().slice(0, 10);
 const lines = [
   `由${workflowLink}（\`.github/workflows/weekly-deps.yml\`）生成，最近一次更新：${today}（UTC）。`,
   '',
-  `把 ${PACKAGE_FILES.map(code).join(' 和 ')}（路径从仓库根目录算起）中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
+  `把 ${PACKAGE_FILES.map(code).join(' 和 ')}（路径从仓库根目录算起）中的依赖升到当前大版本内的最新版本（例外见文末「说明」），然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
     'pnpm 会为 `packages/` 下的各包自动安装 Mantine 等 peer 依赖（应由使用方提供的依赖），并在锁文件里记下版本；' +
     '根目录的 Mantine 升级时，`pnpm install` 不会跟着升级这些记录，`pnpm dedupe` 让这些包也使用根目录的新版本。' +
     '否则新旧两个版本的 Mantine 并存，组件源码和测试辅助库 `@mantine-tests/core` 拿到的不是同一份 Mantine，' +
@@ -260,7 +260,7 @@ lines.push(
   '',
   '## 说明',
   '',
-  `- 只升到同一大版本内的最新版本；0.x 版本的包只升 patch。具体规则在 \`.github/scripts/${NCU_CONFIG_NAME}\`。`,
+  `- 默认只升到同一大版本内的最新版本。例外：0.x 版本的包和 \`typescript\` 只升 patch；用 pnpm patch 修改过的包不自动升级。具体规则在 \`.github/scripts/${NCU_CONFIG_NAME}\`，每个包没有升级的原因见上表。`,
   `- 每次运行时，工作流都从 \`${base}\` 重新生成分支 \`${branch}\` 的内容。内容有变化时强制推送，本 PR 随之更新；没有变化时只更新本说明。`,
   `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交（按提交标题判断：本工作流的提交标题都是 ${commitSubject}），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支，也不再更新本说明。这类提交包括：手动提交的修改（例如为通过检查修改代码）；手动改了版本号（例如某个新版本有问题，先退回旧版本）后加上 \`update-lockfile\` 标签，由另一个工作流 \`update-lockfile.yml\` 重新生成并提交的锁文件；升级改变了组件的样子后加上 \`update-screenshots\` 标签，由 \`update-screenshots.yml\` 重新生成并提交的 UI 测试基准截图（截图对比用的标准图片）。`
 );
