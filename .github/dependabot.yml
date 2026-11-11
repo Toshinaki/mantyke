@@ -1,9 +1,12 @@
 version: 2
 
-# npm 依赖的版本升级不再由 Dependabot 负责，改由每周运行的 .github/workflows/weekly-deps.yml 汇总成一个 PR：
-# Dependabot 按类别分组，会把必须一起升级的包拆进不同的 PR（nx 与 @nx/*、vitest 与 @vitest/*），也不运行 pnpm dedupe。
+# npm 依赖的版本升级不再由 Dependabot 负责，改由每周运行的 .github/workflows/weekly-deps.yml 汇总成一个 PR。原因：
+# - Dependabot 按分组规则（原先这里配置了"构建工具""测试工具"等分组）各开一个 PR，
+#   会把版本号必须保持一致的包拆开，例如 nx 与 @nx/*、vitest 与 @vitest/*；
+# - 它不运行 pnpm dedupe。packages/ 下的各包把 Mantine 声明为 peer 依赖（由使用方提供的依赖），
+#   不运行 dedupe 时它们会继续用旧版本的 Mantine，测试因此失败。
 # Dependabot 的安全更新是仓库设置（Settings → Code security → Dependabot security updates），不受这个文件影响：
-# 开启后，即使这里没有 npm 的配置，有漏洞的依赖也会收到安全更新的 PR。
+# 开启后，即使这里没有 npm 的配置，有漏洞的依赖也会收到安全更新的 PR。2026-11 时这项设置没有开启。
 updates:
   # GitHub Actions updates
   - package-ecosystem: 'github-actions'

@@ -1,9 +1,11 @@
 // 每周依赖升级（.github/workflows/weekly-deps.yml）中修改 package.json 的一步：
-// 1. 用 npm-check-updates（ncu）把 PACKAGE_FILES 中的依赖升到当前大版本内的最新版本，升级策略见同目录的 ncurc.cjs；
-// 2. 让根目录 package.json 中 pnpm.overrides 的版本与依赖中的版本一致（syncpack 会检查两者是否相同）；
+// 1. 用 npm-check-updates（ncu）把 PACKAGE_FILES 中的依赖升到当前大版本内的最新版本，升级规则见同目录的 ncurc.cjs；
+// 2. 根目录 package.json 的 pnpm.overrides（强制整个仓库使用指定版本）中，与依赖同名的条目改成依赖的新版本。
+//    syncpack（检查各 package.json 中同名依赖版本是否一致的工具，pnpm test 会运行它）要求两者相同；
 // 3. 生成 PR 说明：升级了哪些包，以及有更新版本但没有升级的包和原因。
-// 用法：在仓库根目录运行 node weekly-deps.mjs <PR 说明的输出路径>，需要事先全局安装 ncu。
-// 有包被升级时向 GITHUB_OUTPUT 写入 changed=true，否则写入 changed=false。
+// 用法：在仓库根目录运行 node .github/scripts/weekly-deps.mjs <PR 说明的输出路径>，需要事先全局安装 ncu。
+// 运行在 GitHub Actions 中时，把 changed=true（有包被升级）或 changed=false 写进步骤输出文件 GITHUB_OUTPUT，
+// 工作流的后续步骤据此决定是否更新锁文件和推送。
 // 本地试运行时可以用环境变量 NCU_BIN 指定 ncu 的 JS 入口文件，代替全局的 ncu 命令。
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,14 +19,19 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const NCU_CONFIG_NAME = 'ncurc.cjs';
 const ncuConfig = createRequire(import.meta.url)(`./${NCU_CONFIG_NAME}`);
 
-// 有更新版本但不自动升级的已知原因。没列出的包按下面 getHoldReason 中的规则说明
+// 有更新版本但没有升级的已知原因，只用于写 PR 说明，不影响升级。
+// 升到哪个版本由 ncurc.cjs 决定：只在同一大版本内升级，所以 eslint 10 这样的新大版本本来就不会升。
+// 没列出的包按下面 getHoldReason 中的规则说明原因
 const HOLD_REASONS = {
   eslint: 'eslint-config-mantine 只支持 ESLint 9',
   '@eslint/js': 'eslint-config-mantine 只支持 ESLint 9',
   typescript: 'typescript-eslint 要求 TypeScript < 6.1',
   stylelint: 'stylelint-config-standard-scss 17 只支持 stylelint 17',
-  '@types/node': '`@types/node` 不升大版本',
+  '@types/node': '`@types/node` 的大版本对应 Node.js 的大版本，维护者约定不随新版 Node.js 升级',
 };
+
+const MAJOR_REASON =
+  '大版本升级需要维护者确认后手动进行（会影响组件表现的，还要在真实设备上确认）';
 
 const outputPath = process.argv[2];
 if (!outputPath) {
@@ -89,9 +96,9 @@ function getHoldReason(name, current, latest) {
     return '0.x 版本的 minor 升级可能不兼容，等同于大版本升级，需要手动升级';
   }
   if (latest.parts[0] > current.parts[0]) {
-    return '大版本升级需要维护者实机确认后手动进行';
+    return MAJOR_REASON;
   }
-  return `升级策略（\`.github/scripts/${NCU_CONFIG_NAME}\`）没有升到这个版本`;
+  return `升级规则（\`.github/scripts/${NCU_CONFIG_NAME}\`）没有升到这个版本`;
 }
 
 /** 把同一个包在多个文件里的相同变化合并成一行，所在文件用顿号连接 */
@@ -117,10 +124,10 @@ const held = [];
 for (const file of PACKAGE_FILES) {
   const before = collectSpecs(readJson(file));
 
-  // 不加升级策略，查出每个包 latest 标签对应的版本，用来列出没有升级的包
+  // 不用升级规则，查出每个包在 npm 上标记为 latest 的版本（不指定版本时 npm 默认安装的版本），用来列出没有升级的包
   const latest = runNcu(['--packageFile', file, '--dep', 'prod,dev', '--jsonUpgraded']);
 
-  // 按升级策略升级，直接改写 package.json（ncu 只改版本号，保留文件原有格式）
+  // 按升级规则升级，直接改写 package.json（ncu 只改版本号，保留文件原有格式）
   runNcu([
     '--packageFile',
     file,
@@ -186,7 +193,8 @@ const today = new Date().toISOString().slice(0, 10);
 const lines = [
   `由${workflowLink}（\`.github/workflows/weekly-deps.yml\`）生成，最近一次更新：${today}（UTC）。`,
   '',
-  `把 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。`,
+  `把 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
+    '`packages/` 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），`pnpm dedupe` 让它们与根目录使用同一版本，否则旧版本会留在锁文件里，导致测试失败。',
   '',
   `## 已升级（${upgradedRows.length} 个）`,
   '',
@@ -204,7 +212,7 @@ if (upgradedRows.length > 0) {
 if (syncedOverrides.length > 0) {
   lines.push(
     '',
-    `根目录 \`package.json\` 的 \`pnpm.overrides\` 已同步：${syncedOverrides
+    `根目录 \`package.json\` 的 \`pnpm.overrides\`（强制整个仓库使用指定版本）中，与依赖同名的条目已改成依赖的新版本，因为 syncpack（\`pnpm test\` 中检查依赖版本是否一致的工具）要求两者相同：${syncedOverrides
       .map((item) => `${code(item.name)} ${code(item.from)} → ${code(item.to)}`)
       .join('，')}。`
   );
@@ -226,7 +234,7 @@ lines.push(
   '',
   `- 只升到同一大版本内的最新版本；0.x 版本的包只升 patch。具体规则在 \`.github/scripts/${NCU_CONFIG_NAME}\`。`,
   `- 每次运行时，分支 \`${branch}\` 都从 \`${base}\` 重新生成并强制推送，本 PR 的内容随之更新。`,
-  `- 如果在分支 \`${branch}\` 上另外提交了改动（包括 \`update-screenshots\` 标签生成的提交），在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。`
+  `- 如果分支 \`${branch}\` 上有不是本工作流生成的提交，在本 PR 合并或关闭之前，工作流不会再覆盖这个分支。这包括手动提交的修改，以及给 PR 加上 \`update-lockfile\` 或 \`update-screenshots\` 标签后，对应的工作流重新生成锁文件或基准截图时提交的改动。`
 );
 
 const body = `${lines.join('\n')}\n`;
