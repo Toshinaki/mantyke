@@ -25,11 +25,13 @@ const ncuConfig = createRequire(import.meta.url)(`./${NCU_CONFIG_NAME}`);
 // 升到哪个版本由 ncurc.cjs 决定：只在同一大版本内升级，所以 eslint 10 这样的新大版本本来就不会升。
 // 没列出的包按下面 getHoldReason 中的规则说明原因
 const HOLD_REASONS = {
-  eslint: 'eslint-config-mantine 只支持 ESLint 9',
-  '@eslint/js': '`@eslint/js` 与 ESLint 同步发版，大版本要和 `eslint` 一致；eslint-config-mantine 只支持 ESLint 9',
-  typescript: '现在用的是 6.0.x，typescript-eslint 要求 TypeScript < 6.1，所以只升 patch',
+  eslint: '本仓库使用的 ESLint 规则配置 eslint-config-mantine 只支持 ESLint 9',
+  '@eslint/js':
+    '`@eslint/js` 与 ESLint 同步发版，大版本要和 `eslint` 一致；本仓库使用的 ESLint 规则配置 eslint-config-mantine 只支持 ESLint 9',
+  typescript:
+    '现在用的是 6.0.x，typescript-eslint（让 ESLint 检查 TypeScript 代码的工具）要求 TypeScript < 6.1，所以只升 patch',
   stylelint:
-    '目前最新的 stylelint-config-standard-scss 17 只支持 stylelint 17，要等它支持新的大版本',
+    '本仓库使用的 stylelint 规则配置 stylelint-config-standard-scss 最新为 17 版，只支持 stylelint 17；要等这个配置支持 stylelint 的新大版本',
   '@types/node': '`@types/node` 的大版本对应 Node.js 的大版本，什么时候升大版本由维护者决定',
 };
 
@@ -100,7 +102,8 @@ function getHoldReason(name, current, latest) {
   if (latest.parts[0] > current.parts[0]) {
     return MAJOR_REASON;
   }
-  return `升级规则（\`.github/scripts/${NCU_CONFIG_NAME}\`）没有升到这个版本`;
+  // 走到这里说明 ncurc.cjs 中有针对这个包的限制（例如 PATCH_ONLY），但上面的 HOLD_REASONS 没有写原因
+  return `升级规则（\`.github/scripts/${NCU_CONFIG_NAME}\`）限制了这个包的升级范围，原因见该文件中的注释`;
 }
 
 /** 把同一个包在多个文件里的相同变化合并成一行，所在文件用顿号连接 */
@@ -201,7 +204,8 @@ const lines = [
   '',
   `把 ${PACKAGE_FILES.map(code).join(' 和 ')} 中的依赖升到当前大版本内的最新版本，然后运行 \`pnpm install\` 和 \`pnpm dedupe\` 重新生成 \`pnpm-lock.yaml\`。` +
     'pnpm 会为 `packages/` 下的各包自动安装 Mantine 等 peer 依赖（应由使用方提供的依赖），并在锁文件里记下版本；' +
-    '`pnpm install` 不会跟着升级这些记录，`pnpm dedupe` 让这些包也使用根目录的新版本。否则新旧两个版本的 Mantine 并存，组件和测试拿到的不是同一份，' +
+    '根目录的 Mantine 升级时，`pnpm install` 不会跟着升级这些记录，`pnpm dedupe` 让这些包也使用根目录的新版本。' +
+    '否则新旧两个版本的 Mantine 并存，组件源码和测试辅助库 `@mantine-tests/core` 拿到的不是同一份 Mantine，' +
     '测试会报「MantineProvider was not found」（详见 `.github/workflows/weekly-deps.yml` 中 Update lockfile 步骤的注释）。',
   '',
   `## 已升级（${upgradedRows.length} 个）`,
