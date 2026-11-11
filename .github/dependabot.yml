@@ -1,5 +1,6 @@
 version: 2
 
+# Dependabot 是 GitHub 自带的依赖升级机器人，按这个文件的配置定期为过时的依赖开 PR。
 # npm 依赖的版本升级不再由 Dependabot 负责，改由每周运行的 .github/workflows/weekly-deps.yml 汇总成一个 PR。原因：
 # - 版本号必须保持一致的包会被拆进不同的 PR。例如 vitest 与 @vitest/*、nx 与 @nx/* 是同一套工具的各个部分，
 #   一起发版，版本不同时互相不兼容。原先这里按包名配置了几个分组，每组一个 PR，其中测试组（`vitest*`）排在
