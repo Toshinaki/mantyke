@@ -7,7 +7,7 @@ const { resolve } = require('node:path');
 
 const rootPackage = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
 
-// 只升 patch 的包（只改版本号的第三段），注释写明原因
+// 只升 patch 的包（只改版本号的第三段），每一项上方的注释写明原因
 const PATCH_ONLY = new Set([
   // typescript-eslint 要求 TypeScript < 6.1
   'typescript',

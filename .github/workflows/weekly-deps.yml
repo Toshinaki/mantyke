@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      # 升级和安装依赖时会运行第三方代码（ncu、pnpm）。actions/checkout 默认把 GITHUB_TOKEN
+      # 升级和安装依赖时会运行第三方代码（ncu、pnpm 这两个工具本身）。actions/checkout 默认把 GITHUB_TOKEN
       # （GitHub 为每次运行自动生成、能按工作流的权限访问本仓库的令牌）写进 .git/config，
       # 这里关掉（persist-credentials: false），让这些代码读不到令牌。
       # 推送用的令牌（见下面的 Generate token 步骤）在这些步骤结束后才生成。
@@ -40,7 +40,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # 脚本取自触发这次运行的分支。手动运行（在 Actions 页面点 Run workflow）时可以选择分支，
+      # 脚本取自触发这次运行的分支（定时运行时是 master）。手动运行（在 Actions 页面点 Run workflow）时可以选择分支，
       # 运行的是该分支上的工作流和脚本，可以用来在合并前试验对它们的修改。
       # 不过工作流文件要先存在于 master 上，Actions 页面才会出现这个工作流。
       # 要升级的 package.json 始终取自 master，PR 也始终合并进 master。仓库是公开的，不带令牌也能拉取。
@@ -67,13 +67,15 @@ jobs:
         run: node "$RUNNER_TEMP/weekly-deps-scripts/weekly-deps.mjs" "$RUNNER_TEMP/pr-body.md"
 
       # 为什么还要运行 pnpm dedupe：
-      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（由使用方提供的依赖），锁文件为每个包单独记录它实际用哪个版本。
-      # pnpm install 只重新解析 package.json 中写法改变了的依赖。各包的 peer 范围（如 ^9.0.0）没有变，
+      # packages/ 下的各包把 Mantine 等声明为 peer 依赖（应由使用方提供的依赖）。在本仓库里，这些包自己也是 pnpm 的项目，
+      # pnpm 默认会自动为它们安装 peer 依赖，并在锁文件里为每个包记下装的是哪个版本。
+      # pnpm install 只为 package.json 中写法改变了的依赖重新决定版本。各包的 peer 范围（如 ^9.0.0）没有变，
       # 旧版本仍然满足它，所以这份记录停在旧版本，安装后新旧两个版本的 @mantine/core 同时存在。
-      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面包一层根目录新版的 MantineProvider；
-      # 组件源码在 packages/ 下，引入的却是为该包记录的旧版 @mantine/core。
-      # MantineProvider 通过 React context（React 在组件之间传值的机制）把主题传给组件，两份 @mantine/core 各有
-      # 自己的 context，组件找不到外面那层 MantineProvider，测试报「MantineProvider was not found」。
+      # 单元测试用根目录安装的 @mantine-tests/core 渲染组件，它在组件外面包一层根目录新版的 MantineProvider
+      # （为内部组件提供主题等设置的组件）；组件源码在 packages/ 下，引入的却是为该包记录的旧版 @mantine/core。
+      # MantineProvider 通过 React context 传递设置：外层组件把值放进一个 context 对象，内层组件按同一个对象去取。
+      # 两份 @mantine/core 各自创建了自己的 context 对象，外层放进的是新版的那个，组件去旧版的那个里取，
+      # 取不到，测试就报「MantineProvider was not found」。
       # pnpm dedupe 合并锁文件中能合并的版本，让各包也用根目录的新版本。
       # 这里只需要锁文件，--ignore-scripts 不运行依赖的安装脚本。
       - name: Update lockfile
