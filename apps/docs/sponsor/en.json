@@ -1,9 +1,22 @@
 {
   "publisher": {
     "name": "Ishtar Gate",
+    "shortName": "Ishtar Gate",
     "intro": "Ishtar Gate (多宝 in Chinese and Japanese) is where I publish my small tools.",
     "authorSite": "Author's website",
     "github": "Ishtar Gate on GitHub"
+  },
+  "profile": {
+    "about": "I build and maintain them in my spare time. Every tool stays free.",
+    "lead": "If one of these tools helps you, your support keeps it up to date.",
+    "otherWaysTitle": "Other ways to help",
+    "otherWays": "Star the projects you like, report problems, and tell a friend."
+  },
+  "snippet": {
+    "heading": "Support",
+    "lead": "PROJECT_NAME is free and maintained in my spare time. If it helps you, you can buy me a cup of tea:",
+    "note": "Ishtar Gate (多宝 in Chinese and Japanese) is where I publish my small tools, and sponsorships go through its accounts.",
+    "authorHeading": "Author"
   },
   "methodsTitle": "Buy the author a cup of tea",
   "methods": {

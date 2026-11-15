@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'clsx';
 import { Anchor, Card, Image, Text } from '@mantine/core';
 import type { SponsorMethod } from '../../sponsor';
 import classes from './SponsorPage.module.css';
@@ -16,7 +17,7 @@ export function SponsorMethodCard({ method }: SponsorMethodCardProps) {
           href={method.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={classes.methodName}
+          className={cx(classes.methodName, classes.methodLink)}
         >
           {method.name}
         </Anchor>
