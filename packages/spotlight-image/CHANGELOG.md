@@ -1,5 +1,11 @@
 # @mantyke/spotlight-image
 
+## 1.1.1
+
+### Patch Changes
+
+- 2ed1e00: Add sponsor links: the README now has Support and Author sections, and `package.json` lists the GitHub Sponsors and Ko-fi pages in `funding` (shown by `npm fund`).
+
 ## 1.1.0
 
 ### Minor Changes
