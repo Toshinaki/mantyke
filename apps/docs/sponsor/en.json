@@ -1,0 +1,18 @@
+{
+  "publisher": {
+    "name": "Ishtar Gate",
+    "intro": "Ishtar Gate (多宝 in Chinese and Japanese) is where I publish my small tools.",
+    "authorSite": "Author's website",
+    "github": "Ishtar Gate on GitHub"
+  },
+  "methodsTitle": "Buy the author a cup of tea",
+  "methods": {
+    "kofi": { "name": "Ko-fi", "hint": "Card and more, no sign-up needed" },
+    "wechat": { "name": "WeChat", "hint": "Scan with WeChat" },
+    "alipay": { "name": "Alipay", "hint": "Scan with Alipay" },
+    "githubSponsors": {
+      "name": "GitHub Sponsors",
+      "hint": "For people already on GitHub, one-time or monthly"
+    }
+  }
+}

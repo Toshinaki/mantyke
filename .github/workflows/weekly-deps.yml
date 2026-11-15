@@ -1,10 +1,11 @@
 name: Weekly Dependency Upgrades
 
 # 每周一运行：按升级规则把根目录和 apps/docs 的 npm 依赖升到当前大版本内的最新版本（有例外，见下面提到的规则文件 ncurc.cjs），重新生成锁文件，
-# 推送到固定分支 deps/weekly，并创建或更新同一个 PR。没有可升级的版本时不开 PR。
+# 顺便把赞助信息同步成 Ishtar-Gate/.github 仓库中的最新内容（作者所有项目赞助信息的唯一来源），
+# 推送到固定分支 deps/weekly，并创建或更新同一个 PR。没有可升级的版本、赞助信息也没有变化时不开 PR。
 # 取代 Dependabot 的 npm 版本升级 PR，原因见 .github/dependabot.yml 开头的注释。
 # 升级规则在 .github/scripts/ncurc.cjs（升级工具 npm-check-updates 的配置文件），
-# 修改 package.json 和生成 PR 说明在 .github/scripts/weekly-deps.mjs。
+# 修改 package.json 和生成 PR 说明在 .github/scripts/weekly-deps.mjs，同步赞助信息在 .github/scripts/sync-sponsor.mjs。
 on:
   schedule:
     # 每周一 09:17（UTC）。避开整点：整点时 GitHub 的定时任务最拥挤，可能被延后或丢弃
@@ -97,6 +98,13 @@ jobs:
           pnpm install --no-frozen-lockfile --ignore-scripts
           pnpm dedupe --ignore-scripts
 
+      # 从 Ishtar-Gate/.github（公开仓库，不需要令牌）下载最新的赞助信息，覆盖文档站赞助页的数据、二维码、
+      # .github/FUNDING.yml、各 README 中标记之间的两节和各包 package.json 的 funding；
+      # packages/ 下有变化时加一个 patch changeset。在 PR 说明末尾追加「赞助信息」一节。
+      - name: Sync sponsor info
+        id: sponsor
+        run: node "$RUNNER_TEMP/weekly-deps-scripts/sync-sponsor.mjs" "$RUNNER_TEMP/pr-body.md"
+
       # 用 GitHub App 的令牌推送和创建 PR。GitHub App 相当于安装在仓库上的机器人账号，用私钥可以换到临时令牌。
       # 这个 App 是仓库为自动化单独配置的，用到仓库 secrets（仓库设置中保存的机密值）中的 RELEASE_APP_ID（App 的 ID）和
       # RELEASE_APP_PRIVATE_KEY（App 的私钥），release.yml、update-lockfile.yml、update-screenshots.yml 也用它。
@@ -113,6 +121,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           CHANGED: ${{ steps.upgrade.outputs.changed }}
+          SPONSOR_CHANGED: ${{ steps.sponsor.outputs.changed }}
           BODY_FILE: ${{ runner.temp }}/pr-body.md
         run: |
           set -euo pipefail
@@ -136,18 +145,21 @@ jobs:
             fi
           fi
 
-          if [ "$CHANGED" != 'true' ]; then
-            echo "没有可升级的版本。"
+          if [ "$CHANGED" != 'true' ] && [ "$SPONSOR_CHANGED" != 'true' ]; then
+            echo "没有可升级的版本，赞助信息也没有变化。"
             if [ -n "$pr" ]; then
               gh pr close "$pr" --repo "$GITHUB_REPOSITORY" \
-                --comment "按升级规则，${BASE} 上的依赖已经没有可升级的版本，关闭这个 PR。"
+                --comment "按升级规则，${BASE} 上的依赖已经没有可升级的版本，赞助信息也没有变化，关闭这个 PR。"
             fi
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json apps/docs/package.json pnpm-lock.yaml
+          # 依赖升级改动的文件，加上 sync-sponsor.mjs 可能改动的文件（git add 只暂存其中确实有改动的）
+          git add package.json apps/docs/package.json pnpm-lock.yaml \
+            apps/docs/sponsor .github/FUNDING.yml .changeset \
+            README.md docs/README.zh-CN.md packages/*/README.md packages/*/package.json
           git commit -m "$COMMIT_SUBJECT"
 
           remote_sha=''

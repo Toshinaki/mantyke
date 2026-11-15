@@ -41,5 +41,15 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
-  "bugs": "https://github.com/Toshinaki/mantyke/issues"
+  "bugs": "https://github.com/Toshinaki/mantyke/issues",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/Ishtar-Gate"
+    },
+    {
+      "type": "ko-fi",
+      "url": "https://ko-fi.com/ishtar_gate"
+    }
+  ]
 }
