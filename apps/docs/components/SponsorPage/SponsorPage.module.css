@@ -1,0 +1,56 @@
+.root {
+  padding-top: 60px;
+}
+
+.title {
+  color: var(--mantine-color-bright);
+  font-size: 32px;
+  letter-spacing: -0.5px;
+  font-weight: 500;
+}
+
+.description {
+  margin-top: var(--mantine-spacing-xs);
+  margin-bottom: var(--mantine-spacing-xl);
+  font-size: var(--mantine-font-size-lg);
+  color: var(--mantine-color-dimmed);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  text-align: center;
+}
+
+.methodName {
+  font-weight: 600;
+  color: var(--mantine-color-bright);
+}
+
+/* 二维码在白底上才扫得出来，深色模式下也保持白底 */
+.qr {
+  width: 100%;
+  max-width: 160px;
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  background-color: var(--mantine-color-white);
+}
+
+.hint {
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+}
+
+.sectionTitle {
+  margin-top: 48px;
+  margin-bottom: var(--mantine-spacing-xs);
+  color: var(--mantine-color-bright);
+  font-size: var(--mantine-h3-font-size);
+  font-weight: 500;
+}
+
+.intro {
+  margin-bottom: var(--mantine-spacing-xs);
+}

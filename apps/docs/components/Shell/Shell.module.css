@@ -14,6 +14,18 @@
   padding-bottom: 120px;
 }
 
+/* 右侧按钮在窄屏上也排成一行，不跟着左边的链接一起换行 */
+.controls {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.sponsorIcon {
+  width: 22px;
+  height: 22px;
+  color: var(--mantine-color-red-6);
+}
+
 .brand {
   font-size: var(--mantine-font-size-lg);
   font-weight: 700;

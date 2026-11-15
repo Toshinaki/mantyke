@@ -1,10 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { IconHeart } from '@tabler/icons-react';
 import cx from 'clsx';
 import { AppShell, Container, Group, RemoveScroll, useMantineColorScheme } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
-import { ColorSchemeControl, HeaderControls } from '@mantinex/mantine-header';
+import { ColorSchemeControl, HeaderControl, HeaderControls } from '@mantinex/mantine-header';
 import { PACKAGES, REPOSITORY_URL } from '../../data';
 import classes from './Shell.module.css';
 
@@ -37,19 +38,25 @@ export function Shell({ children }: ShellProps) {
             ))}
           </Group>
 
-          <HeaderControls
-            visibleFrom="sm"
-            githubLink={REPOSITORY_URL}
-            withDirectionToggle={false}
-            withSearch={false}
-            withSupport={false}
-            withDiscord={false}
-            // discordLink 是 HeaderControls 的必填项，隐藏 Discord 按钮后不会用到
-            discordLink=""
-          />
+          <Group gap="xs" className={classes.controls}>
+            <HeaderControl component={Link} href="/sponsor" tooltip="Sponsor" aria-label="Sponsor">
+              <IconHeart className={classes.sponsorIcon} stroke={1.5} />
+            </HeaderControl>
 
-          <Group hiddenFrom="sm">
-            <ColorSchemeControl />
+            <HeaderControls
+              visibleFrom="sm"
+              githubLink={REPOSITORY_URL}
+              withDirectionToggle={false}
+              withSearch={false}
+              withSupport={false}
+              withDiscord={false}
+              // discordLink 是 HeaderControls 的必填项，隐藏 Discord 按钮后不会用到
+              discordLink=""
+            />
+
+            <Group hiddenFrom="sm">
+              <ColorSchemeControl />
+            </Group>
           </Group>
         </Container>
       </AppShell.Header>

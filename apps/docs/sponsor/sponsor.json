@@ -1,0 +1,17 @@
+{
+  "publisher": {
+    "github": "https://github.com/Ishtar-Gate",
+    "authorSite": "https://re-jeunesse.org/"
+  },
+  "methods": [
+    { "id": "kofi", "kind": "link", "url": "https://ko-fi.com/ishtar_gate", "qr": "qr/kofi.png" },
+    { "id": "wechat", "kind": "qr", "qr": "qr/wechat.png" },
+    { "id": "alipay", "kind": "qr", "qr": "qr/alipay.png" },
+    {
+      "id": "githubSponsors",
+      "kind": "link",
+      "url": "https://github.com/sponsors/Ishtar-Gate",
+      "qr": "qr/github-sponsors.png"
+    }
+  ]
+}
