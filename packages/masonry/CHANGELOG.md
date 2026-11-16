@@ -1,5 +1,11 @@
 # @mantyke/masonry
 
+## 1.0.2
+
+### Patch Changes
+
+- 798d4b3: Update the sponsor information in the README and `funding`.
+
 ## 1.0.1
 
 ### Patch Changes
