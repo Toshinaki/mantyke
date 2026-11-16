@@ -29,6 +29,13 @@
   color: var(--mantine-color-bright);
 }
 
+/* 能点击的名称用链接色加下划线，和只能扫码的名称区分开 */
+.methodLink {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* 二维码在白底上才扫得出来，深色模式下也保持白底 */
 .qr {
   width: 100%;
